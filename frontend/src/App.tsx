@@ -19,10 +19,11 @@ import {
   Menu as MenuIcon,
   TrendingUp as TrendingUpIcon,
   Assessment as AssessmentIcon,
-  Settings as SettingsIcon,
+  Casino as CasinoIcon,
 } from '@mui/icons-material'
 import ETFList from './pages/ETFList'
 import Backtest from './pages/Backtest'
+import MonteCarlo from './pages/MonteCarlo'
 
 const theme = createTheme({
   palette: {
@@ -38,12 +39,23 @@ const theme = createTheme({
 
 const DRAWER_WIDTH = 240;
 
+type PageType = 'etfs' | 'backtest' | 'montecarlo';
+
 function App() {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [currentPage, setCurrentPage] = useState<'etfs' | 'backtest'>('etfs');
+  const [currentPage, setCurrentPage] = useState<PageType>('etfs');
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
+  };
+
+  const getPageTitle = () => {
+    switch (currentPage) {
+      case 'etfs': return 'ETF 列表';
+      case 'backtest': return '投資組合回測';
+      case 'montecarlo': return '蒙地卡羅模擬';
+      default: return 'ETF Backtester';
+    }
   };
 
   const drawer = (
@@ -82,6 +94,20 @@ function App() {
             <ListItemText primary="投資組合回測" />
           </ListItemButton>
         </ListItem>
+        <ListItem disablePadding>
+          <ListItemButton 
+            selected={currentPage === 'montecarlo'}
+            onClick={() => {
+              setCurrentPage('montecarlo');
+              setMobileOpen(false);
+            }}
+          >
+            <ListItemIcon>
+              <CasinoIcon />
+            </ListItemIcon>
+            <ListItemText primary="蒙地卡羅模擬" />
+          </ListItemButton>
+        </ListItem>
       </List>
     </div>
   );
@@ -109,7 +135,7 @@ function App() {
               <MenuIcon />
             </IconButton>
             <Typography variant="h6" noWrap component="div">
-              {currentPage === 'etfs' ? 'ETF 列表' : '投資組合回測'}
+              {getPageTitle()}
             </Typography>
           </Toolbar>
         </AppBar>
@@ -125,7 +151,7 @@ function App() {
             open={mobileOpen}
             onClose={handleDrawerToggle}
             ModalProps={{
-              keepMounted: true, // Better open performance on mobile.
+              keepMounted: true,
             }}
             sx={{
               display: { xs: 'block', sm: 'none' },
@@ -159,7 +185,9 @@ function App() {
           }}
         >
           <Toolbar />
-          {currentPage === 'etfs' ? <ETFList /> : <Backtest />}
+          {currentPage === 'etfs' && <ETFList />}
+          {currentPage === 'backtest' && <Backtest />}
+          {currentPage === 'montecarlo' && <MonteCarlo />}
         </Box>
       </Box>
     </ThemeProvider>

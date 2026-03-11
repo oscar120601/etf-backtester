@@ -5,11 +5,12 @@
 ## 功能特色
 
 - 📊 **歷史回測**：根據歷史數據回測投資組合表現
-- 📈 **績效指標**：計算 CAGR、夏普比率、最大回撤等多種指標
 - 🎲 **蒙地卡羅模擬**：預測未來可能的投資組合走勢
+- 📈 **績效指標**：計算 CAGR、夏普比率、最大回撤等多種指標
 - 🔄 **再平衡策略**：支援多種再平衡頻率設定
 - 💰 **定期定額**：支援每月定期投入的回測
 - 📉 **風險分析**：計算 VaR、CVaR 等風險指標
+- 📱 **響應式設計**：支援桌面與行動裝置
 
 ## 技術架構
 
@@ -60,6 +61,12 @@ pip install -r requirements.txt
 # 初始化資料庫
 python -c "from app.db.init_db import init_db; init_db()"
 
+# 匯入範例價格資料
+python -m app.db.import_prices --csv ../data/etf_prices_sample.csv
+
+# 或產生模擬資料
+python -m app.db.import_prices --generate --symbol VTI --start-date 2020-01-01 --end-date 2025-03-10
+
 # 啟動開發伺服器
 uvicorn app.main:app --reload --port 8000
 ```
@@ -91,13 +98,13 @@ start-simple.bat
 
 ## 使用說明
 
-### 1. 查看 ETF 列表
+### 1. ETF 列表
 
 - 點擊左側選單「ETF 列表」
 - 瀏覽系統支援的 ETF 資訊
 - 使用搜尋框快速找到特定 ETF
 
-### 2. 執行回測
+### 2. 投資組合回測
 
 - 點擊左側選單「投資組合回測」
 - 配置投資組合：
@@ -116,6 +123,41 @@ start-simple.bat
 - **價值走勢圖**：投資組合與基準的比較
 - **詳細指標**：波動率、索丁諾比率、卡瑪比率等
 - **年度統計**：最佳/最差年度表現、正報酬年數
+
+### 4. 蒙地卡羅模擬
+
+- 點擊左側選單「蒙地卡羅模擬」
+- 選擇 ETF 並設定參數：
+  - 初始金額與定期定額
+  - 模擬年數（10-50 年）
+  - 模擬次數（100-5000 次）
+  - 目標金額
+- 點擊「執行模擬」查看結果
+
+### 5. 解讀蒙地卡羅結果
+
+- **達成目標機率**：達成設定目標的機率
+- **百分位數路徑**：不同情境下的預測走勢
+- **關鍵年份預測**：第 5/10/20 年的預測價值
+
+## 資料匯入
+
+### 從 CSV 匯入
+
+```bash
+# 匯入 CSV 檔案
+cd backend
+python -m app.db.import_prices --csv ../data/etf_prices_sample.csv
+```
+
+CSV 格式：`symbol,date,open,high,low,close,adjusted_close,volume,dividend`
+
+### 產生模擬資料
+
+```bash
+# 產生指定 ETF 的模擬資料
+python -m app.db.import_prices --generate --symbol VTI --start-date 2020-01-01 --end-date 2025-03-10
+```
 
 ## API 端點
 
@@ -137,10 +179,38 @@ start-simple.bat
 - [x] 回測引擎實作
 - [x] 績效指標計算
 - [x] 前端介面開發
-- [ ] 資料匯入功能
+- [x] 資料匯入功能
+- [x] 蒙地卡羅模擬
+- [x] 前端優化（Loading、錯誤處理）
 - [ ] 使用者認證
 - [ ] 回測結果儲存
+- [ ] 報告匯出功能
 - [ ] 更多圖表類型
+
+## 專案結構
+
+```
+etf-backtester/
+├── backend/              # FastAPI 後端
+│   ├── app/
+│   │   ├── api/v1/endpoints/   # API 端點
+│   │   ├── core/               # 回測引擎與指標計算
+│   │   ├── db/                 # 資料庫與匯入腳本
+│   │   ├── models/             # SQLAlchemy 模型
+│   │   └── schemas/            # Pydantic 模型
+│   └── requirements.txt
+├── frontend/             # React 前端
+│   ├── src/
+│   │   ├── components/         # UI 組件
+│   │   ├── pages/              # 頁面
+│   │   ├── services/           # API 服務
+│   │   └── types/              # TypeScript 類型
+│   └── package.json
+├── data/                 # 範例資料
+│   └── etf_prices_sample.csv
+├── docs/                 # 技術文件
+└── README.md
+```
 
 ## 貢獻指南
 
