@@ -1,0 +1,141 @@
+version: '3.8'
+
+services:
+  # 前端開發伺服器
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - REACT_APP_API_URL=http://localhost:8000
+      - CHOKIDAR_USEPOLLING=true
+      - WDS_SOCKET_PORT=0
+    depends_on:
+      - backend
+    networks:
+      - etf-network
+
+  # 後端 API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    environment:
+      - DATABASE_URL=postgresql://etf_user:etf_password@db:5432/etf_backtest
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/2
+      - ENVIRONMENT=development
+      - DEBUG=true
+    depends_on:
+      - db
+      - redis
+    networks:
+      - etf-network
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Celery Worker (背景任務)
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./backend:/app
+    environment:
+      - DATABASE_URL=postgresql://etf_user:etf_password@db:5432/etf_backtest
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/2
+    depends_on:
+      - db
+      - redis
+    networks:
+      - etf-network
+    command: celery -A app.tasks worker --loglevel=info
+
+  # Celery Beat (排程器)
+  scheduler:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./backend:/app
+    environment:
+      - DATABASE_URL=postgresql://etf_user:etf_password@db:5432/etf_backtest
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/2
+    depends_on:
+      - db
+      - redis
+    networks:
+      - etf-network
+    command: celery -A app.tasks beat --loglevel=info
+
+  # PostgreSQL 資料庫
+  db:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_USER=etf_user
+      - POSTGRES_PASSWORD=etf_password
+      - POSTGRES_DB=etf_backtest
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    networks:
+      - etf-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U etf_user -d etf_backtest"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis 快取
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - etf-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # pgAdmin (資料庫管理工具，可選)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@etfbacktester.com
+      - PGADMIN_DEFAULT_PASSWORD=admin123
+      - PGADMIN_CONFIG_SERVER_MODE=False
+    ports:
+      - "5050:80"
+    depends_on:
+      - db
+    networks:
+      - etf-network
+    profiles:
+      - tools
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  etf-network:
+    driver: bridge

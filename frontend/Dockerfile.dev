@@ -1,0 +1,15 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+# 安裝依賴
+COPY package*.json ./
+RUN npm install
+
+# 複製原始碼
+COPY . .
+
+# 開發伺服器
+EXPOSE 3000
+
+CMD ["npm", "start"]
