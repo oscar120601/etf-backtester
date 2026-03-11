@@ -6,28 +6,51 @@
 
 ### 系統需求
 
+#### 方案一：Docker（推薦）
 - Docker Desktop
-- Python 3.11+ (可選，用於本地開發)
-- Node.js 20+ (可選，用於前端開發)
+
+#### 方案二：無 Docker（快速開發）
+- Python 3.11+
+- Node.js 20+
+
+---
 
 ### 啟動開發環境
 
-1. **使用 PowerShell 腳本（推薦）**:
+#### 方案 A：使用 Docker（完整環境）
+
 ```powershell
+# 使用 PowerShell 腳本
 .\start-dev.ps1
 ```
 
-2. **或使用 Docker Compose**:
+或手動啟動：
 ```bash
-# 啟動所有服務
 docker-compose up -d
-
-# 檢視日誌
-docker-compose logs -f
-
-# 停止服務
-docker-compose down
 ```
+
+#### 方案 B：無 Docker（SQLite 快速開發）
+
+如果不方便使用 Docker，可以使用 **SQLite** 快速開始：
+
+**Windows 用戶（雙擊執行）**：
+```
+雙擊 start-simple.bat
+```
+
+**PowerShell 用戶**：
+```powershell
+.\start-dev-sqlite.ps1
+```
+
+這會：
+- 使用 SQLite 資料庫（不需要 Docker 或 PostgreSQL）
+- 自動創建虛擬環境
+- 安裝依賴
+- 初始化資料庫
+- 啟動後端伺服器
+
+**注意**：SQLite 適合開發測試，生產環境請使用 PostgreSQL。
 
 ### 開發環境網址
 
