@@ -3,7 +3,7 @@ from typing import List, Optional
 
 from sqlalchemy import (
     Column, Integer, String, Date, DateTime, Numeric, Boolean, 
-    Text, ARRAY, ForeignKey, Index
+    Text, ForeignKey, Index
 )
 from sqlalchemy.orm import relationship
 
@@ -22,21 +22,21 @@ class ETF(BaseModel):
     # 基本資訊
     name = Column(String(200), nullable=False)
     name_zh = Column(String(200))
-    issuer = Column(String(100), nullable=False)
+    issuer = Column(String(100))
     
     # 分類資訊
-    asset_class = Column(String(50), nullable=False, index=True)
+    asset_class = Column(String(50), index=True)
     asset_subclass = Column(String(50))
     factor_type = Column(String(50))
     region = Column(String(50), index=True)
     sector = Column(String(100))
     
     # 費用與日期
-    expense_ratio = Column(Numeric(6, 5), nullable=False)
-    inception_date = Column(Date, nullable=False)
+    expense_ratio = Column(Numeric(6, 5))
+    inception_date = Column(Date)
     
     # 交易所資訊
-    exchange = Column(String(20), nullable=False)
+    exchange = Column(String(20))
     currency = Column(String(3), default="USD")
     
     # 狀態與管理
@@ -49,8 +49,8 @@ class ETF(BaseModel):
     liquidity_score = Column(Integer)
     risk_level = Column(Integer)
     
-    # 彈性標籤
-    tags = Column(ARRAY(String))
+    # 彈性標籤（SQLite 不支援 ARRAY，改用字串）
+    tags = Column(String(500))
     description = Column(Text)
     
     # 追蹤指數
@@ -72,7 +72,7 @@ class ETF(BaseModel):
     @property
     def expense_ratio_percent(self) -> float:
         """以百分比顯示費用率"""
-        return float(self.expense_ratio) * 100
+        return float(self.expense_ratio) * 100 if self.expense_ratio else 0
 
 
 class ETFPrice(BaseModel):
@@ -89,7 +89,7 @@ class ETFPrice(BaseModel):
     # 日期
     date = Column(Date, nullable=False, index=True)
     
-    # 價格資料
+    # 價格資料（允許 null 以便匯入時更靈活）
     open_price = Column(Numeric(12, 4))
     high_price = Column(Numeric(12, 4))
     low_price = Column(Numeric(12, 4))
@@ -116,11 +116,5 @@ class ETFPrice(BaseModel):
         Index('idx_prices_symbol_date_unique', 'symbol', 'date', unique=True),
     )
     
-    def __repr__(self) -> str:
+    def __repr__(self):
         return f"<ETFPrice(symbol='{self.symbol}', date='{self.date}', close={self.close_price})>"
-    
-    @property
-    def return_pct(self) -> Optional[float]:
-        """計算日報酬率（需要有前一日資料）"""
-        # 這個屬性會在服務層實作
-        return None

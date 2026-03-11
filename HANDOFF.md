@@ -2,7 +2,25 @@
 
 ## 📅 會話記錄
 
-### 2026-03-11 開發會話（第三部分）
+### 2026-03-11 開發會話（第四部分：整合測試）
+
+#### 已完成工作
+- [x] **前後端整合測試**
+  - 測試後端資料庫層：SQLite 連線成功
+  - 資料表建立：`etf_master`, `etf_prices`
+  - ETF 種子資料載入：5 檔 ETF（VTI, VOO, QQQ, BND, VT）
+  - 修復模型相容性：將 PostgreSQL ARRAY 改為 SQLite 相容的 String
+  - 建立 `app/api/deps.py` 依賴注入檔案
+
+#### 發現的問題
+- [ ] **Pydantic 版本衝突**導致 FastAPI 無法啟動
+  - 錯誤：`cannot import name 'validate_core_schema' from 'pydantic_core'`
+  - 原因：pydantic/pydantic-core/pydantic-settings 版本不相容
+  - 解決方案：重新安裝相容版本（見下方指令）
+
+---
+
+### 2026-03-11 開發會話（第三部分：A+C+D）
 
 #### 已完成工作
 - [x] **A: 準備 ETF 歷史價格資料**
@@ -24,7 +42,7 @@
 
 ---
 
-### 2026-03-11 開發會話（第二部分）
+### 2026-03-11 開發會話（第二部分：回測引擎）
 
 #### 已完成工作
 - [x] **回測引擎核心** (`BacktestEngine`)
@@ -55,7 +73,7 @@
 
 ---
 
-### 2026-03-11 開發會話（第一部分）
+### 2026-03-11 開發會話（第一部分：專案建立）
 
 #### 已完成工作
 - [x] 審閱並更新 PRD（加入 ETF 擴充規劃）
@@ -73,63 +91,77 @@
 
 ## 當前狀態
 
-### Week 1: 準備階段
+### 系統狀態總覽
+
+```
+┌─────────────────────────────────────────┐
+│  前端 React 層   ✅ 完整實作              │
+│  - ETFList 頁面  ✅                      │
+│  - Backtest 頁面 ✅                      │
+│  - MonteCarlo 頁面 ✅                    │
+│  - UI 組件       ✅                      │
+├─────────────────────────────────────────┤
+│  後端資料庫層    ✅ 正常運作              │
+│  - SQLite 連線   ✅                      │
+│  - 資料表建立    ✅                      │
+│  - 種子資料      ✅  5檔ETF              │
+├─────────────────────────────────────────┤
+│  後端 API 層     ❌ 待修復                │
+│  - Pydantic 版本衝突導致無法啟動          │
+├─────────────────────────────────────────┤
+│  整合測試        ⏳ 待完成                │
+│  - 需修復後端後才能測試 API 連接          │
+└─────────────────────────────────────────┘
+```
+
+### Week 1-2: 核心功能開發
 - [x] 環境建置 - ✅ 已完成
-- [x] 資料庫設計 - ✅ 已完成（含 Migration）
-- [x] 後端 API 基礎 - ✅ 已完成（ETF CRUD + 回測 API）
-- [x] 前端基礎 - ✅ 已完成（React + MUI + Chart.js）
+- [x] 資料庫設計 - ✅ 已完成（SQLite 版本）
+- [x] 後端 API 開發 - ✅ 程式碼完成
+- [x] 前端基礎 - ✅ 已完成
 - [x] 回測引擎 - ✅ 已完成
 - [x] 蒙地卡羅模擬 - ✅ 已完成
 - [x] 資料匯入工具 - ✅ 已完成
-- [ ] 整合測試 - ⏳ 待進行（需要真實數據）
+- [x] 資料庫整合測試 - ✅ 已完成
+- [ ] **後端 API 啟動測試** - ⏳ **待修復 Pydantic 版本問題**
+- [ ] **前後端連接測試** - ⏳ 待進行
 - [ ] 部署上線 - ⏳ 待進行
-
-### 專案結構
-```
-etf-backtester/
-├── backend/              ✅ FastAPI + 回測引擎
-│   ├── app/
-│   │   ├── api/v1/endpoints/backtest.py  ✅ 回測 API
-│   │   ├── core/
-│   │   │   ├── backtest_engine.py       ✅ 回測計算
-│   │   │   └── metrics.py               ✅ 績效指標
-│   │   ├── db/import_prices.py          ✅ 資料匯入腳本
-│   │   └── schemas/backtest.py          ✅ Pydantic 模型
-│   └── ...
-├── frontend/             ✅ React + TypeScript
-│   ├── src/
-│   │   ├── pages/
-│   │   │   ├── Backtest.tsx             ✅ 回測頁面
-│   │   │   ├── ETFList.tsx              ✅ ETF 列表
-│   │   │   └── MonteCarlo.tsx           ✅ 蒙地卡羅頁面
-│   │   ├── components/
-│   │   │   ├── LoadingOverlay.tsx       ✅ 載入動畫
-│   │   │   └── ErrorAlert.tsx           ✅ 錯誤提示
-│   │   ├── services/api.ts              ✅ API 服務
-│   │   └── types/index.ts               ✅ TypeScript 類型
-│   └── ...
-├── data/                 ✅ 範例資料
-│   └── etf_prices_sample.csv
-├── docs/                 ✅ 4份技術文件
-└── README.md             ✅ 專案說明
-```
 
 ---
 
 ## 下一步行動（優先順序）
 
-### 立即行動（下次對話）
-1. [ ] 執行資料匯入腳本載入範例資料
-2. [ ] 啟動後端並測試 API（使用 curl 或瀏覽器訪問 /docs）
-3. [ ] 啟動前端並進行完整功能測試
+### 🔥 立即行動（下次對話優先處理）
 
-### 近期任務（Week 1-2）
+1. [ ] **修復 Pydantic 版本衝突**
+   ```bash
+   pip uninstall pydantic pydantic-core pydantic-settings -y
+   pip install pydantic==2.5.0 pydantic-core==2.14.0 pydantic-settings==2.1.0 fastapi==0.104.1
+   ```
+
+2. [ ] **啟動後端並測試 API**
+   ```bash
+   cd backend
+   python -m uvicorn app.main:app --reload --port 8000
+   # 測試：curl http://localhost:8000/api/v1/etfs/
+   ```
+
+3. [ ] **啟動前端並進行完整功能測試**
+   ```bash
+   cd frontend
+   npm install
+   npm run dev
+   ```
+
+### 📋 近期任務（Week 1-2）
+
 4. [ ] 獲取真實 ETF 歷史價格（Yahoo Finance 或其他來源）
 5. [ ] 錯誤處理與邊界情況測試
 6. [ ] 響應式設計優化（手機版適配）
 7. [ ] 更多圖表類型（回撤圖、年度熱力圖）
 
-### 中期任務（Week 3-4）
+### 🚀 中期任務（Week 3-4）
+
 8. [ ] 多組合比較功能
 9. [ ] 報告匯出功能（PDF/CSV）
 10. [ ] 資料同步機制（自動更新 ETF 價格）
@@ -139,12 +171,12 @@ etf-backtester/
 
 ## 已知問題與風險
 
-| 問題 | 嚴重程度 | 應對方式 |
-|------|---------|---------|
-| 尚未載入真實價格資料 | **高** | 使用範例 CSV 或執行匯入腳本 |
-| Python 依賴安裝緩慢 | 中 | 暫時擱置，可先用 mock 數據測試 |
-| 尚未進行整合測試 | 中 | 待有數據後優先測試 |
-| Docker 無法使用 | 低 | 已改用 SQLite + 本地 Python |
+| 問題 | 嚴重程度 | 狀態 | 應對方式 |
+|------|---------|------|---------|
+| Pydantic 版本衝突 | **高** | 🔴 待修復 | 重新安裝相容版本 |
+| 尚未載入真實價格資料 | 中 | 🟡 待處理 | 使用範例 CSV 或執行匯入腳本 |
+| 尚未進行 API 連接測試 | 中 | 🟡 待處理 | 修復後端後優先測試 |
+| Docker 無法使用 | 低 | 🟢 已解決 | 已改用 SQLite + 本地 Python |
 
 ---
 
@@ -168,23 +200,44 @@ etf-backtester/
 
 ## 快速啟動指令
 
+### 修復並啟動後端
+
 ```bash
-# 1. 資料匯入（進入後端環境後）
+# 1. 進入後端目錄
 cd backend
-python -m app.db.import_prices --csv ../data/etf_prices_sample.csv
 
-# 2. 啟動後端
-uvicorn app.main:app --reload --port 8000
+# 2. 修復 Pydantic 版本（如果還沒修復）
+pip uninstall pydantic pydantic-core pydantic-settings -y
+pip install pydantic==2.5.0 pydantic-core==2.14.0 pydantic-settings==2.1.0 fastapi==0.104.1
 
-# 3. 啟動前端（另一個終端）
+# 3. 初始化資料庫（如果還沒建立）
+python -c "from app.db.base import Base; from app.db.session import engine; Base.metadata.create_all(bind=engine)"
+
+# 4. 啟動後端伺服器
+python -m uvicorn app.main:app --reload --port 8000
+
+# 5. 測試 API（另一個終端）
+curl http://localhost:8000/api/v1/etfs/
+```
+
+### 啟動前端
+
+```bash
+# 1. 進入前端目錄
 cd frontend
+
+# 2. 安裝依賴（第一次）
 npm install
+
+# 3. 啟動開發伺服器
 npm run dev
+
+# 4. 開啟瀏覽器訪問 http://localhost:5173
 ```
 
 ---
 
-## 新增功能說明
+## 功能說明
 
 ### 資料匯入功能
 ```bash
@@ -203,4 +256,18 @@ python -m app.db.import_prices --generate --symbol VTI --start-date 2020-01-01 -
 
 ---
 
-*最後更新: 2026-03-11*
+## 測試狀態摘要
+
+| 測試項目 | 結果 | 時間 |
+|---------|------|------|
+| 資料庫連線 | ✅ 通過 | 2026-03-11 |
+| 資料表建立 | ✅ 通過 | 2026-03-11 |
+| ETF 種子資料 | ✅ 通過 | 2026-03-11 |
+| FastAPI 啟動 | ❌ 失敗 | 2026-03-11 |
+| API 端點測試 | ⏳ 待測 | - |
+| 前端-後端連接 | ⏳ 待測 | - |
+
+---
+
+*最後更新: 2026-03-11*  
+*版本: v0.2.0 - 核心功能完成，待修復啟動問題*

@@ -1,30 +1,27 @@
+"""
+数据库连接 - 使用 SQLite 版本
+"""
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 from typing import Generator
 
-from app.config import settings
+# 使用 SQLite 配置
+from app.config_sqlite import DATABASE_URL, DEBUG
 
-# 建立資料庫引擎
+# 创建引擎 - SQLite
 engine = create_engine(
-    settings.DATABASE_URL,
-    pool_size=settings.DATABASE_POOL_SIZE,
-    max_overflow=30,
-    pool_timeout=30,
-    pool_recycle=1800,
-    pool_pre_ping=True,
-    echo=settings.DEBUG
+    DATABASE_URL,
+    connect_args={"check_same_thread": False},
+    echo=DEBUG
 )
 
-# 建立 Session 工廠
+# 创建 Session 工厂
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
 def get_db() -> Generator[Session, None, None]:
     """
-    FastAPI 依賴注入用：取得資料庫 Session
-    
-    Yields:
-        Session: SQLAlchemy 資料庫 Session
+    FastAPI 依赖注入用：获取数据库 Session
     """
     db = SessionLocal()
     try:
