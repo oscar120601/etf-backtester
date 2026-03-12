@@ -13,25 +13,25 @@ class Settings(BaseSettings):
     DEBUG: bool = False
     ENVIRONMENT: str = "production"
     
-    # 資料庫
-    DATABASE_URL: str = "postgresql://etf_user:etf_password@localhost:5432/etf_backtest"
+    # 資料庫 - 支援 SQLite 和 PostgreSQL
+    DATABASE_URL: str = "sqlite:///./etf_backtest.db"
     DATABASE_POOL_SIZE: int = 20
     
-    # Redis
-    REDIS_URL: str = "redis://localhost:6379/0"
+    # Redis (可選)
+    REDIS_URL: Optional[str] = None
     REDIS_CACHE_TTL: int = 3600
     
-    # Celery
-    CELERY_BROKER_URL: str = "redis://localhost:6379/1"
-    CELERY_RESULT_BACKEND: str = "redis://localhost:6379/2"
+    # Celery (可選)
+    CELERY_BROKER_URL: Optional[str] = None
+    CELERY_RESULT_BACKEND: Optional[str] = None
     
     # API
     API_V1_STR: str = "/api/v1"
     SECRET_KEY: str = "your-secret-key-change-in-production"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     
-    # CORS
-    BACKEND_CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]
+    # CORS - 允許所有來源用於部署
+    BACKEND_CORS_ORIGINS: List[str] = ["*"]
     
     # 外部 API
     YAHOO_FINANCE_API_KEY: Optional[str] = None
