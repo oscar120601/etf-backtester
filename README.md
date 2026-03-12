@@ -186,10 +186,28 @@ python -m app.db.import_prices --generate --symbol VTI --start-date 2020-01-01 -
 ### 回測功能
 - `POST /api/v1/backtest/run` - 執行回測
 - `POST /api/v1/backtest/monte-carlo` - 蒙地卡羅模擬
+- `POST /api/v1/backtest/compare` - 多組合比較
 - `GET /api/v1/backtest/supported-etfs` - 取得支援的 ETF 列表
+
+### 回測儲存
+- `GET /api/v1/saved-backtests` - 取得儲存的回測列表
+- `POST /api/v1/saved-backtests` - 儲存回測結果
+- `GET /api/v1/saved-backtests/{id}` - 取得單個回測詳情
+- `PUT /api/v1/saved-backtests/{id}` - 更新回測資訊
+- `DELETE /api/v1/saved-backtests/{id}` - 刪除回測
+
+### 資料同步
+- `GET /api/v1/data-sync/price-status` - 取得 ETF 價格更新狀態
+- `POST /api/v1/data-sync/update-prices` - 更新 ETF 價格資料
+- `POST /api/v1/data-sync/update-single/{symbol}` - 更新單一 ETF
+
+### 系統
+- `GET /health` - 健康檢查
+- `GET /` - 服務狀態
 
 ## 開發計畫
 
+### 已完成 ✅
 - [x] 專案架構設計
 - [x] 資料庫模型設計
 - [x] 後端 API 開發
@@ -199,10 +217,21 @@ python -m app.db.import_prices --generate --symbol VTI --start-date 2020-01-01 -
 - [x] 資料匯入功能
 - [x] 蒙地卡羅模擬
 - [x] 前端優化（Loading、錯誤處理）
-- [ ] 使用者認證
-- [ ] 回測結果儲存
-- [ ] 報告匯出功能
-- [ ] 更多圖表類型
+- [x] 多組合比較功能
+- [x] 預設模板功能
+- [x] 回測結果儲存
+- [x] 報告匯出功能（PDF/CSV）
+- [x] 更多圖表類型（回撤圖、熱力圖）
+- [x] 資料同步機制
+- [x] 響應式設計優化
+- [x] 部署配置準備
+
+### 進行中 🚀
+- [ ] 生產環境部署
+
+### 待開發 📋
+- [ ] 使用者認證系統
+- [ ] 社交登入（Google/GitHub）
 
 ## 專案結構
 
@@ -236,6 +265,43 @@ etf-backtester/
 ## 授權
 
 MIT License
+
+## 部署上線
+
+### 快速部署
+
+專案已配置好部署檔案，可直接部署到以下平台：
+
+#### 後端部署 (Railway)
+
+```bash
+cd backend
+
+# 使用 Railway CLI
+railway login
+railway init
+railway up
+```
+
+#### 前端部署 (Vercel)
+
+```bash
+cd frontend
+
+# 使用 Vercel CLI
+vercel login
+vercel
+```
+
+### 詳細部署指南
+
+參見 [DEPLOY.md](DEPLOY.md) 獲取完整的部署步驟和故障排除指南。
+
+### 生產環境 URL
+
+部署後更新以下配置：
+- 後端 API: `https://your-api.up.railway.app`
+- 前端網站: `https://your-app.vercel.app`
 
 ## 免責聲明
 
