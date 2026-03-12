@@ -110,4 +110,25 @@ export const savedBacktestAPI = {
   },
 };
 
+// 資料同步 API
+export const dataSyncAPI = {
+  getStatus: async (): Promise<{ total_etfs: number; status: any[] }> => {
+    const response = await api.get('/data-sync/price-status');
+    return response.data;
+  },
+
+  updatePrices: async (symbols?: string[]): Promise<any> => {
+    const params: Record<string, any> = {};
+    if (symbols) params.symbols = symbols;
+    
+    const response = await api.post('/data-sync/update-prices', null, { params });
+    return response.data;
+  },
+
+  updateSingleETF: async (symbol: string): Promise<any> => {
+    const response = await api.post(`/data-sync/update-single/${symbol}`);
+    return response.data;
+  },
+};
+
 export default api;

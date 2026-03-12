@@ -21,6 +21,8 @@ import {
 import { Delete as DeleteIcon, Add as AddIcon } from '@mui/icons-material';
 import TemplateSelector from '../components/TemplateSelector';
 import SaveBacktestDialog from '../components/SaveBacktestDialog';
+import BacktestCharts from '../components/BacktestCharts';
+import ExportReport from '../components/ExportReport';
 import { PortfolioTemplate } from '../data/portfolioTemplates';
 import { Line } from 'react-chartjs-2';
 import {
@@ -29,6 +31,7 @@ import {
   LinearScale,
   PointElement,
   LineElement,
+  BarElement,
   Title,
   Tooltip,
   Legend,
@@ -42,6 +45,7 @@ ChartJS.register(
   LinearScale,
   PointElement,
   LineElement,
+  BarElement,
   Title,
   Tooltip,
   Legend
@@ -76,6 +80,9 @@ const Backtest: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<BacktestResponse | null>(null);
+
+  // 圖表引用（用於 PDF 匯出）
+  const chartRef = useRef<HTMLDivElement>(null);
 
   // 載入 ETF 列表
   useEffect(() => {
@@ -465,12 +472,20 @@ const Backtest: React.FC = () => {
               {/* 圖表 */}
               <Card sx={{ mb: 3 }}>
                 <CardContent>
-                  {chartData && <Line data={chartData} options={chartOptions} />}
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                    <Typography variant="h6">
+                      投資組合價值走勢
+                    </Typography>
+                    <ExportReport result={result} chartRef={chartRef} />
+                  </Box>
+                  <Box ref={chartRef}>
+                    {chartData && <Line data={chartData} options={chartOptions} />}
+                  </Box>
                 </CardContent>
               </Card>
 
               {/* 詳細指標 */}
-              <Card>
+              <Card sx={{ mb: 3 }}>
                 <CardContent>
                   <Typography variant="h6" gutterBottom>
                     詳細績效指標
@@ -527,6 +542,9 @@ const Backtest: React.FC = () => {
                   </Grid>
                 </CardContent>
               </Card>
+
+              {/* 圖表分析 */}
+              <BacktestCharts result={result} />
             </>
           ) : (
             <Card sx={{ height: 400, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
