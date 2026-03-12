@@ -121,3 +121,29 @@ export interface MonteCarloResponse {
   }>;
   success_probability: Record<string, number>;
 }
+
+// 已儲存回測
+export interface SavedBacktest {
+  id: number;
+  name: string;
+  description?: string;
+  start_date?: string;
+  end_date?: string;
+  total_return?: number;
+  cagr?: number;
+  max_drawdown?: number;
+  sharpe_ratio?: number;
+  created_at: string;
+  portfolio?: PortfolioHolding[];
+  parameters?: BacktestParameters;
+  result?: BacktestResponse;
+}
+
+export interface SavedBacktestCreate {
+  name: string;
+  description?: string;
+  session_id?: string;
+  portfolio: PortfolioHolding[];
+  parameters: BacktestParameters;
+  result?: BacktestResponse;
+}

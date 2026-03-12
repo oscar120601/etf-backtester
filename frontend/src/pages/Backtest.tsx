@@ -20,6 +20,7 @@ import {
 } from '@mui/material';
 import { Delete as DeleteIcon, Add as AddIcon } from '@mui/icons-material';
 import TemplateSelector from '../components/TemplateSelector';
+import SaveBacktestDialog from '../components/SaveBacktestDialog';
 import { PortfolioTemplate } from '../data/portfolioTemplates';
 import { Line } from 'react-chartjs-2';
 import {
@@ -376,6 +377,27 @@ const Backtest: React.FC = () => {
               >
                 {loading ? '執行中...' : '執行回測'}
               </Button>
+
+              {/* 儲存按鈕 */}
+              {result && (
+                <Box sx={{ mt: 2 }}>
+                  <SaveBacktestDialog
+                    portfolio={holdings.filter(h => h.symbol).map(h => ({
+                      symbol: h.symbol,
+                      weight: h.weight,
+                    }))}
+                    parameters={{
+                      start_date: startDate,
+                      end_date: endDate,
+                      initial_amount: initialAmount,
+                      rebalance_frequency: rebalanceFreq,
+                      monthly_contribution: monthlyContribution || undefined,
+                      reinvest_dividends: true,
+                    }}
+                    result={result}
+                  />
+                </Box>
+              )}
             </CardContent>
           </Card>
         </Grid>

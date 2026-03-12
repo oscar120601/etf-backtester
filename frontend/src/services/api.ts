@@ -6,6 +6,8 @@ import type {
   BacktestResponse,
   MonteCarloRequest,
   MonteCarloResponse,
+  SavedBacktest,
+  SavedBacktestCreate,
 } from '../types';
 
 // 建立 axios 實例
@@ -75,6 +77,36 @@ export const backtestAPI = {
   }): Promise<any> => {
     const response = await api.post('/backtest/compare', data);
     return response.data;
+  },
+};
+
+// 已儲存回測 API
+export const savedBacktestAPI = {
+  getAll: async (sessionId?: string): Promise<{ items: SavedBacktest[]; total: number }> => {
+    const params: Record<string, string> = {};
+    if (sessionId) params.session_id = sessionId;
+    
+    const response = await api.get('/saved-backtests', { params });
+    return response.data;
+  },
+
+  getById: async (id: number): Promise<SavedBacktest> => {
+    const response = await api.get(`/saved-backtests/${id}`);
+    return response.data;
+  },
+
+  create: async (data: SavedBacktestCreate): Promise<SavedBacktest> => {
+    const response = await api.post('/saved-backtests', data);
+    return response.data;
+  },
+
+  update: async (id: number, data: { name?: string; description?: string }): Promise<SavedBacktest> => {
+    const response = await api.put(`/saved-backtests/${id}`, data);
+    return response.data;
+  },
+
+  delete: async (id: number): Promise<void> => {
+    await api.delete(`/saved-backtests/${id}`);
   },
 };
 

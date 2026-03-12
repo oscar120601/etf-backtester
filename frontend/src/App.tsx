@@ -21,11 +21,13 @@ import {
   Assessment as AssessmentIcon,
   Casino as CasinoIcon,
   CompareArrows as CompareArrowsIcon,
+  Save as SaveIcon,
 } from '@mui/icons-material'
 import ETFList from './pages/ETFList'
 import Backtest from './pages/Backtest'
 import MonteCarlo from './pages/MonteCarlo'
 import Comparison from './pages/Comparison'
+import SavedBacktests from './pages/SavedBacktests'
 
 const theme = createTheme({
   palette: {
@@ -41,7 +43,7 @@ const theme = createTheme({
 
 const DRAWER_WIDTH = 240;
 
-type PageType = 'etfs' | 'backtest' | 'montecarlo' | 'comparison';
+type PageType = 'etfs' | 'backtest' | 'montecarlo' | 'comparison' | 'saved';
 
 function App() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -57,6 +59,7 @@ function App() {
       case 'backtest': return '投資組合回測';
       case 'montecarlo': return '蒙地卡羅模擬';
       case 'comparison': return '投資組合比較';
+      case 'saved': return '我的回測';
       default: return 'ETF Backtester';
     }
   };
@@ -123,6 +126,20 @@ function App() {
               <CompareArrowsIcon />
             </ListItemIcon>
             <ListItemText primary="組合比較" />
+          </ListItemButton>
+        </ListItem>
+        <ListItem disablePadding>
+          <ListItemButton 
+            selected={currentPage === 'saved'}
+            onClick={() => {
+              setCurrentPage('saved');
+              setMobileOpen(false);
+            }}
+          >
+            <ListItemIcon>
+              <SaveIcon />
+            </ListItemIcon>
+            <ListItemText primary="我的回測" />
           </ListItemButton>
         </ListItem>
       </List>
@@ -206,6 +223,7 @@ function App() {
           {currentPage === 'backtest' && <Backtest />}
           {currentPage === 'montecarlo' && <MonteCarlo />}
           {currentPage === 'comparison' && <Comparison />}
+          {currentPage === 'saved' && <SavedBacktests />}
         </Box>
       </Box>
     </ThemeProvider>

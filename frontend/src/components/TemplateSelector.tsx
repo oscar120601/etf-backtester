@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   Box,
   Button,
@@ -16,8 +16,8 @@ import {
   Tooltip,
   IconButton,
 } from '@mui/material';
-import { Template as TemplateIcon, Close as CloseIcon } from '@mui/icons-material';
-import { portfolioTemplates, PortfolioTemplate, templatesByCategory, templateCategories } from '../data/portfolioTemplates';
+import { AccountBalance as TemplateIcon, Close as CloseIcon } from '@mui/icons-material';
+import { PortfolioTemplate, templatesByCategory, templateCategories } from '../data/portfolioTemplates';
 
 interface TemplateSelectorProps {
   onSelect: (template: PortfolioTemplate) => void;
