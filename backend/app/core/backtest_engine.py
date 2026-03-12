@@ -39,6 +39,17 @@ class PortfolioHolding:
 
 
 @dataclass
+class BacktestConfig:
+    """回測配置"""
+    start_date: date
+    end_date: date
+    initial_amount: Decimal = Decimal("10000")
+    rebalance_frequency: str = "annual"
+    monthly_contribution: Optional[Decimal] = None
+    reinvest_dividends: bool = True
+
+
+@dataclass
 class BacktestResult:
     """單日回測結果"""
     date: date
@@ -312,6 +323,138 @@ class BacktestEngine:
                 holding.value = target_shares * price
         
         return holdings, cash
+    
+    def run_monte_carlo(
+        self,
+        holdings: List[PortfolioHolding],
+        years: int,
+        initial_amount: Decimal,
+        monthly_contribution: Decimal,
+        simulations: int,
+        confidence_levels: List[float] = None
+    ) -> Dict:
+        """
+        執行蒙地卡羅模擬
+        
+        Args:
+            holdings: 投資組合持倉列表
+            years: 模擬年數
+            initial_amount: 初始金額
+            monthly_contribution: 每月定期投入金額
+            simulations: 模擬次數
+            confidence_levels: 信心水準列表
+        
+        Returns:
+            Dict: 模擬結果，包含 percentiles, paths, success_probability
+        """
+        if confidence_levels is None:
+            confidence_levels = [0.5, 0.75, 0.9, 0.95]
+        
+        # 獲取歷史資料計算報酬率和波動率
+        symbols = [h.symbol for h in holdings]
+        weights = [float(h.weight) for h in holdings]
+        
+        # 獲取歷史價格（使用過去5年）
+        end_date = date.today()
+        start_date = end_date - timedelta(days=365 * 5)
+        prices_df = self._fetch_historical_prices(symbols, start_date, end_date)
+        
+        if prices_df.empty:
+            raise ValueError("無法獲取歷史價格資料")
+        
+        # 計算日報酬率
+        returns_df = prices_df.pct_change().dropna()
+        
+        # 計算年化報酬率和共變異數矩陣
+        annual_returns = returns_df.mean() * 252
+        annual_cov = returns_df.cov() * 252
+        
+        # 確保共變異數矩陣是有效的（對角線為正值）
+        if np.any(np.diag(annual_cov) <= 0):
+            annual_cov = np.diag(np.diag(annual_cov))
+            annual_cov[annual_cov <= 0] = 0.0001
+        
+        # 確保權重總和為 1
+        weights = np.array(weights)
+        weights = weights / weights.sum()
+        
+        # 模擬參數
+        trading_days_per_year = 252
+        total_days = years * trading_days_per_year
+        
+        # 儲存每年的所有模擬結果（用於計算百分位數）
+        yearly_values = {year: [] for year in range(years + 1)}
+        
+        # 執行模擬
+        for _ in range(simulations):
+            # 使用幾何布朗運動進行模擬
+            daily_returns = np.random.multivariate_normal(
+                annual_returns / trading_days_per_year,
+                annual_cov / trading_days_per_year,
+                total_days
+            )
+            
+            # 計算組合日報酬（加權平均）
+            portfolio_daily_returns = np.dot(daily_returns, weights)
+            
+            # 計算累積價值
+            portfolio_value = float(initial_amount)
+            yearly_values[0].append(portfolio_value)  # 第0年 = 初始金額
+            
+            for day in range(total_days):
+                # 價值增長（限制單日漲跌幅度）
+                daily_return = max(-0.2, min(0.2, portfolio_daily_returns[day]))
+                portfolio_value *= (1 + daily_return)
+                
+                # 每月投入（假設每月21個交易日）
+                if day > 0 and day % 21 == 0:
+                    portfolio_value += float(monthly_contribution)
+                
+                # 每年記錄一次
+                if (day + 1) % trading_days_per_year == 0:
+                    year = (day + 1) // trading_days_per_year
+                    if year <= years:
+                        yearly_values[year].append(portfolio_value)
+        
+        # 計算每年的百分位數
+        percentiles = {}
+        percentile_keys = ['5', '25', '50', '75', '95']
+        
+        for p_key in percentile_keys:
+            p_value = int(p_key)
+            percentiles[p_key] = {}
+            for year in range(years + 1):
+                if yearly_values[year]:
+                    percentiles[p_key][str(year)] = float(np.percentile(yearly_values[year], p_value))
+                else:
+                    percentiles[p_key][str(year)] = 0.0
+        
+        # 建立 paths（每個百分位數一條路徑）
+        paths = []
+        for p_key in percentile_keys:
+            path_values = []
+            for year in range(years + 1):
+                path_values.append(percentiles[p_key][str(year)])
+            paths.append({
+                'percentile': p_key,
+                'values': path_values
+            })
+        
+        # 計算成功率（達成目標金額的機率）
+        target_value = float(initial_amount) * 2  # 預設目標是翻倍
+        final_values = yearly_values[years]
+        success_rate = (np.array(final_values) >= target_value).mean() if final_values else 0.0
+        
+        return {
+            'simulations': simulations,
+            'years': years,
+            'percentiles': percentiles,
+            'paths': paths,
+            'success_probability': {
+                'doubling': float(success_rate),
+                'target_amount': target_value
+            }
+        }
 
 
 # 向後兼容的別名

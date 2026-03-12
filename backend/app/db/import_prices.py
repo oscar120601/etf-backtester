@@ -151,10 +151,10 @@ def generate_sample_data(db: Session, symbol: str, start_date: str, end_date: st
             price = ETFPrice(
                 symbol=symbol,
                 date=current_date,
-                open=Decimal(str(round(open_price, 2))),
-                high=Decimal(str(round(high, 2))),
-                low=Decimal(str(round(low, 2))),
-                close=Decimal(str(round(close, 2))),
+                open_price=Decimal(str(round(open_price, 2))),
+                high_price=Decimal(str(round(high, 2))),
+                low_price=Decimal(str(round(low, 2))),
+                close_price=Decimal(str(round(close, 2))),
                 adjusted_close=Decimal(str(round(close, 2))),
                 volume=random.randint(1000000, 5000000),
                 dividend=Decimal(str(round(dividend, 3))) if dividend > 0 else None

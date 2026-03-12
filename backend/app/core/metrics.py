@@ -82,6 +82,7 @@ class MetricsCalculator:
             'value': values
         })
         df.set_index('date', inplace=True)
+        df.index = pd.to_datetime(df.index)  # 確保是 DatetimeIndex
         
         # 計算日報酬率
         df['daily_return'] = df['value'].pct_change()

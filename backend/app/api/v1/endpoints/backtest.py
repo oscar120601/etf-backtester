@@ -5,6 +5,7 @@
 import time
 import uuid
 from datetime import datetime
+from decimal import Decimal
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -20,7 +21,7 @@ from app.schemas.backtest import (
     MonteCarloResponse,
     TimeSeriesPoint,
 )
-from app.services.backtest_engine import BacktestEngine, BacktestConfig, PortfolioHolding
+from app.core.backtest_engine import BacktestEngine, PortfolioHolding
 
 router = APIRouter()
 
@@ -55,57 +56,35 @@ async def run_backtest(
             for h in request.portfolio
         ]
         
-        # 設定回測配置
-        config = BacktestConfig(
+        # 執行回測
+        results = engine.run_backtest(
+            holdings_config=[{"symbol": h.symbol, "weight": float(h.weight)} for h in request.portfolio],
             start_date=request.parameters.start_date,
             end_date=request.parameters.end_date,
-            initial_amount=request.parameters.initial_amount,
+            initial_amount=Decimal(str(request.parameters.initial_amount)),
             rebalance_frequency=request.parameters.rebalance_frequency,
-            monthly_contribution=request.parameters.monthly_contribution,
+            monthly_contribution=Decimal(str(request.parameters.monthly_contribution)) if request.parameters.monthly_contribution else None,
             reinvest_dividends=request.parameters.reinvest_dividends,
         )
         
-        # 執行回測
-        result = engine.run_backtest(holdings, config)
+        # 轉換回測結果為時間序列
+        daily_values = [(r.date, float(r.portfolio_value)) for r in results]
         
         # 計算績效指標
-        metrics = MetricsCalculator.calculate_metrics(
-            result.daily_values,
-            result.benchmark_values if request.benchmark else None
-        )
+        metrics = MetricsCalculator.calculate_metrics(daily_values)
         
         # 準備時間序列資料
         time_series = {
             "portfolio_value": [
-                TimeSeriesPoint(date=d, value=float(v))
-                for d, v in result.daily_values
+                TimeSeriesPoint(date=r.date, value=float(r.portfolio_value))
+                for r in results
             ],
-            "drawdown": [
-                TimeSeriesPoint(date=d, value=float(dd))
-                for d, dd in result.drawdowns
-            ],
+            "drawdown": [],  # 暫時留空
         }
         
         # 如果有基準，加入基準資料
         benchmark_comparison = None
-        if request.benchmark and result.benchmark_values:
-            benchmark_metrics = MetricsCalculator.calculate_metrics(
-                result.benchmark_values
-            )
-            benchmark_comparison = {
-                "symbol": request.benchmark,
-                "metrics": _metrics_to_dict(benchmark_metrics),
-                "time_series": [
-                    TimeSeriesPoint(date=d, value=float(v))
-                    for d, v in result.benchmark_values
-                ],
-                "excess_return": metrics.cagr - benchmark_metrics.cagr,
-                "tracking_error": _calculate_tracking_error(
-                    result.daily_values,
-                    result.benchmark_values
-                ),
-            }
-            time_series["benchmark_value"] = benchmark_comparison["time_series"]
+        benchmark_comparison = None  # 暫時禁用基準比較
         
         execution_time = int((time.time() - start_time) * 1000)
         
@@ -118,7 +97,7 @@ async def run_backtest(
             parameters=request.parameters,
             summary={
                 "initial_value": request.parameters.initial_amount,
-                "final_value": float(result.daily_values[-1][1]),
+                "final_value": float(results[-1].portfolio_value) if results else 0,
                 "total_return": metrics.total_return,
                 "cagr": metrics.cagr,
                 "sharpe_ratio": metrics.sharpe_ratio,
@@ -157,18 +136,18 @@ async def run_monte_carlo(
         result = engine.run_monte_carlo(
             holdings=holdings,
             years=request.years,
-            initial_amount=request.initial_amount,
-            monthly_contribution=request.monthly_contribution,
+            initial_amount=Decimal(str(request.initial_amount)),
+            monthly_contribution=Decimal(str(request.monthly_contribution)),
             simulations=request.simulations,
             confidence_levels=request.confidence_levels,
         )
         
         return MonteCarloResponse(
-            simulations=request.simulations,
-            years=request.years,
-            percentiles=result.percentiles,
-            paths=result.sample_paths,
-            success_probability=result.success_rates,
+            simulations=result['simulations'],
+            years=result['years'],
+            percentiles=result['percentiles'],
+            paths=result['paths'],
+            success_probability=result['success_probability'],
         )
     
     except Exception as e:
