@@ -38,6 +38,14 @@ if not exist "backend\venv\Scripts\python.exe" (
     cd ..
 )
 
+:: 安裝/更新後端相依套件
+echo [3.5/5] Installing Python dependencies...
+cd backend
+call venv\Scripts\activate
+pip install -q -r requirements.txt
+cd ..
+echo        Dependencies OK
+
 :: 啟動後端
 echo [4/5] Starting Backend Server...
 echo        URL: http://localhost:8000
