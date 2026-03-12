@@ -2,7 +2,7 @@
 
 ## 📅 會話記錄
 
-### 2026-03-12 開發會話（第七部分：Week 2 進行中 - 多組合比較 + 模板）
+### 2026-03-12 開發會話（第七部分：Week 2 完成 - 多組合比較 + 模板 + 存檔）
 
 #### 已完成工作
 - [x] **Week 2 Day 1-3: 多組合比較功能**
@@ -14,6 +14,7 @@
   - 建立 `PortfolioTemplates` 資料結構（6 種預設模板）
   - 建立 `TemplateSelector` 組件，一鍵套用經典配置
   - 建立 `ETFSelector` 組件，支援搜尋與多選
+  - 模板已整合到 Backtest 頁面
   - 模板類型：
     - 經典 60/40（股票/債券平衡）
     - 全天候組合（All Weather）
@@ -22,9 +23,11 @@
     - 股息組合（SCHD + 價值股）
     - 全球平衡組合（美股 + 國際股 + 債券）
 
-#### 待完成工作
-- [ ] **Week 2 Day 4**: 整合 TemplateSelector 到 Backtest 頁面
-- [ ] **Week 2 Day 5**: 存檔功能（儲存回測結果與參數）
+- [x] **Week 2 Day 4-5: 存檔功能**
+  - 後端: 建立 `SavedBacktest` 模型與 `/saved-backtests` API 端點
+  - 前端: 建立 `SaveBacktestDialog` 組件，儲存回測結果
+  - 前端: 建立 `SavedBacktests` 頁面，管理已儲存的回測
+  - 功能: 儲存、查看、編輯、刪除回測記錄
 
 ---
 
@@ -172,9 +175,10 @@
 ┌─────────────────────────────────────────┐
 │  前端 React 層   ✅ 完整實作              │
 │  - ETFList 頁面   ✅                     │
-│  - Backtest 頁面  ✅ (模板整合進行中)    │
+│  - Backtest 頁面  ✅ (模板 + 儲存功能)   │
 │  - MonteCarlo 頁面 ✅                    │
-│  - Comparison 頁面 ✅ (新增)             │
+│  - Comparison 頁面 ✅                    │
+│  - SavedBacktests 頁面 ✅ (新增)         │
 │  - UI 組件        ✅                     │
 ├─────────────────────────────────────────┤
 │  後端資料庫層    ✅ 正常運作              │
@@ -187,7 +191,8 @@
 │  - FastAPI 啟動   ✅                     │
 │  - 回測端點       ✅                     │
 │  - Monte Carlo    ✅                     │
-│  - 比較端點       ✅  (新增)             │
+│  - 比較端點       ✅                     │
+│  - 存檔端點       ✅  (新增)             │
 ├─────────────────────────────────────────┤
 │  整合測試        ✅ 已完成                │
 │  - API 連接測試   ✅                     │
@@ -210,12 +215,12 @@
 - [x] **ETF 擴充到 14 檔** - ✅ **已完成**
 - [x] **一鍵啟動腳本** - ✅ **已完成**
 
-### Week 2: 增強功能進行中（60%）
+### Week 2: 增強功能 ✅ 全部完成
 - [x] **多組合比較功能** - ✅ **已完成**
 - [x] **預設模板資料結構** - ✅ **已完成**
 - [x] **模板選擇器組件** - ✅ **已完成**
-- [ ] 模板整合到 Backtest 頁面 - ⏳ 進行中
-- [ ] 存檔功能 - ⏳ 待開始
+- [x] **模板整合到 Backtest 頁面** - ✅ **已完成**
+- [x] **存檔功能** - ✅ **已完成**
 
 - [ ] 部署上線 - ⏳ 待進行
 
@@ -238,10 +243,13 @@
 - 資料庫：SQLite 含真實 ETF 價格數據（2020-2026，14檔 ETF）
 - 功能：回測、Monte Carlo、多組合比較、預設模板
 
-### 📋 近期任務（Week 2 剩餘）
+### 📋 近期任務（Week 3-4）
 
-- [ ] **模板整合**：將 TemplateSelector 整合到 Backtest 頁面
-- [ ] **存檔功能**：儲存回測結果與參數（Day 5）
+1. [ ] 報告匯出功能（PDF/CSV）
+2. [ ] 資料同步機制（自動更新 ETF 價格）
+3. [ ] 更多圖表類型（回撤圖、年度熱力圖）
+4. [ ] 響應式設計優化（手機版適配）
+5. [ ] 部署到雲端（Railway/Vercel）
 
 ### 🚀 中期任務（Week 3-4）
 
@@ -281,9 +289,13 @@
 | 回測頁面 | `frontend/src/pages/Backtest.tsx` | 回測 UI |
 | 蒙地卡羅 | `frontend/src/pages/MonteCarlo.tsx` | 蒙地卡羅 UI |
 | 組合比較 | `frontend/src/pages/Comparison.tsx` | 多組合比較 UI |
+| 我的回測 | `frontend/src/pages/SavedBacktests.tsx` | 已儲存回測 |
 | 模板資料 | `frontend/src/data/portfolioTemplates.ts` | 預設模板 |
 | 模板選擇器 | `frontend/src/components/TemplateSelector.tsx` | 模板組件 |
+| 儲存對話框 | `frontend/src/components/SaveBacktestDialog.tsx` | 儲存回測 |
 | ETF 選擇器 | `frontend/src/components/ETFSelector.tsx` | ETF 多選組件 |
+| 存檔 API | `backend/app/api/v1/endpoints/saved_backtests.py` | 存檔端點 |
+| 存檔模型 | `backend/app/models/saved_backtest.py` | 資料庫模型 |
 
 ---
 
@@ -360,6 +372,8 @@ python -m app.db.import_prices --generate --symbol VTI --start-date 2020-01-01 -
 | **多組合比較 API** | ✅ **通過** | **2026-03-12** |
 | **比較頁面測試** | ✅ **通過** | **2026-03-12** |
 | **模板組件測試** | ✅ **通過** | **2026-03-12** |
+| **存檔 API 測試** | ✅ **通過** | **2026-03-12** |
+| **我的回測頁面** | ✅ **通過** | **2026-03-12** |
 
 ---
 
@@ -385,5 +399,5 @@ python -m app.db.import_prices --generate --symbol VTI --start-date 2020-01-01 -
 ---
 
 *最後更新: 2026-03-12*  
-*版本: v0.3.5 - Week 2 進行中（多組合比較 + 模板已完成）*  
-*計畫版本: v0.4.0 - 4週改版計畫執行中（Week 2 進度 60%）*
+*版本: v0.4.0 - Week 2 全部完成*  
+*計畫版本: v0.4.0 - 4週改版計畫執行中（Week 2 進度 100%，Week 3 待開始）*
