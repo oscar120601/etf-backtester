@@ -64,6 +64,18 @@ export const backtestAPI = {
     const response = await api.get('/backtest/supported-etfs', { params });
     return response.data;
   },
+
+  comparePortfolios: async (data: {
+    portfolios: Array<{
+      id: string;
+      name: string;
+      holdings: Array<{ symbol: string; weight: number }>;
+    }>;
+    parameters: any;
+  }): Promise<any> => {
+    const response = await api.post('/backtest/compare', data);
+    return response.data;
+  },
 };
 
 export default api;

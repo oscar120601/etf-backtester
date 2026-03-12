@@ -232,6 +232,205 @@ def _metrics_to_response(metrics: PerformanceMetrics) -> MetricsResponse:
     )
 
 
+@router.post("/compare")
+async def compare_portfolios(
+    request: dict,
+    db: Session = Depends(get_db),
+):
+    """
+    多組合比較
+    
+    同時回測多個投資組合並返回比較結果，支援最多 3 組組合。
+    """
+    from app.schemas.backtest import BacktestRequest
+    
+    start_time = time.time()
+    
+    try:
+        portfolios = request.get("portfolios", [])
+        parameters = request.get("parameters", {})
+        
+        if len(portfolios) < 2:
+            raise HTTPException(status_code=400, detail="至少需要 2 組投資組合進行比較")
+        
+        if len(portfolios) > 3:
+            raise HTTPException(status_code=400, detail="最多支援 3 組投資組合同時比較")
+        
+        results = []
+        all_dates = set()
+        
+        # 執行每組回測
+        for idx, portfolio_config in enumerate(portfolios):
+            # 建立回測請求
+            backtest_request = BacktestRequest(
+                portfolio=portfolio_config["holdings"],
+                parameters=parameters
+            )
+            
+            # 驗證權重
+            total_weight = sum(h["weight"] for h in portfolio_config["holdings"])
+            if abs(total_weight - 1.0) > 0.001:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"組合 '{portfolio_config.get('name', idx+1)}' 權重總和必須為 1.0，目前為 {total_weight:.4f}"
+                )
+            
+            # 執行回測
+            engine = BacktestEngine(db)
+            
+            backtest_results = engine.run_backtest(
+                holdings_config=portfolio_config["holdings"],
+                start_date=parameters.get("start_date", "2020-01-01"),
+                end_date=parameters.get("end_date", "2025-01-01"),
+                initial_amount=Decimal(str(parameters.get("initial_amount", 10000))),
+                rebalance_frequency=parameters.get("rebalance_frequency", "yearly"),
+                monthly_contribution=Decimal(str(parameters.get("monthly_contribution", 0))) if parameters.get("monthly_contribution") else None,
+                reinvest_dividends=parameters.get("reinvest_dividends", True),
+            )
+            
+            # 計算指標
+            daily_values = [(r.date, float(r.portfolio_value)) for r in backtest_results]
+            metrics = MetricsCalculator.calculate_metrics(daily_values)
+            
+            # 收集所有日期
+            for r in backtest_results:
+                all_dates.add(r.date)
+            
+            results.append({
+                "id": portfolio_config.get("id", f"portfolio_{idx+1}"),
+                "name": portfolio_config.get("name", f"組合 {idx+1}"),
+                "holdings": portfolio_config["holdings"],
+                "metrics": _metrics_to_dict(metrics),
+                "time_series": [
+                    {"date": r.date, "value": float(r.portfolio_value)}
+                    for r in backtest_results
+                ],
+            })
+        
+        # 標準化時間序列（對齊日期）
+        sorted_dates = sorted(all_dates)
+        comparison_data = []
+        
+        for date in sorted_dates:
+            point = {"date": date}
+            for result in results:
+                # 找到對應日期的值
+                value = None
+                for ts in result["time_series"]:
+                    if ts["date"] == date:
+                        value = ts["value"]
+                        break
+                point[result["id"]] = value
+            comparison_data.append(point)
+        
+        execution_time = int((time.time() - start_time) * 1000)
+        
+        return {
+            "comparison_id": str(uuid.uuid4()),
+            "portfolios": [
+                {
+                    "id": r["id"],
+                    "name": r["name"],
+                    "holdings": r["holdings"],
+                    "metrics": r["metrics"],
+                }
+                for r in results
+            ],
+            "comparison_table": _build_comparison_table(results),
+            "time_series": comparison_data,
+            "winner": _determine_winner(results),
+            "generated_at": datetime.utcnow().isoformat(),
+            "execution_time_ms": execution_time,
+        }
+    
+    except Exception as e:
+        if isinstance(e, HTTPException):
+            raise
+        raise HTTPException(status_code=500, detail=f"比較執行失敗: {str(e)}")
+
+
+def _build_comparison_table(results: list) -> dict:
+    """建立比較表格"""
+    metrics_to_compare = [
+        ("total_return", "總報酬率", "%", lambda x: f"{x*100:.2f}"),
+        ("cagr", "年化報酬率", "%", lambda x: f"{x*100:.2f}"),
+        ("volatility", "波動率", "%", lambda x: f"{x*100:.2f}"),
+        ("max_drawdown", "最大回撤", "%", lambda x: f"{x*100:.2f}"),
+        ("sharpe_ratio", "夏普比率", "", lambda x: f"{x:.2f}"),
+        ("sortino_ratio", "索丁諾比率", "", lambda x: f"{x:.2f}"),
+        ("calmar_ratio", "卡瑪比率", "", lambda x: f"{x:.2f}"),
+    ]
+    
+    table = {
+        "headers": ["指標"] + [r["name"] for r in results],
+        "rows": [],
+    }
+    
+    for metric_key, metric_name, unit, formatter in metrics_to_compare:
+        row = {"metric": metric_name, "unit": unit}
+        values = []
+        for result in results:
+            value = result["metrics"].get(metric_key, 0)
+            values.append(value)
+            row[result["id"]] = formatter(value)
+        
+        # 標記最佳值
+        if metric_key in ["max_drawdown", "volatility"]:
+            # 越低越好
+            best_idx = values.index(min(values))
+        else:
+            # 越高越好
+            best_idx = values.index(max(values))
+        
+        row["best"] = results[best_idx]["id"]
+        table["rows"].append(row)
+    
+    return table
+
+
+def _determine_winner(results: list) -> dict:
+    """決定勝出者（綜合評分）"""
+    scores = {}
+    
+    for result in results:
+        scores[result["id"]] = {
+            "name": result["name"],
+            "score": 0,
+            "wins": [],
+        }
+    
+    # 比較各項指標
+    metrics_to_score = [
+        ("cagr", "higher", "最高年化報酬"),
+        ("sharpe_ratio", "higher", "最佳夏普比率"),
+        ("sortino_ratio", "higher", "最佳索丁諾比率"),
+        ("max_drawdown", "lower", "最小最大回撤"),
+        ("calmar_ratio", "higher", "最佳卡瑪比率"),
+    ]
+    
+    for metric_key, direction, description in metrics_to_score:
+        values = [(r["id"], r["metrics"].get(metric_key, 0)) for r in results]
+        
+        if direction == "higher":
+            winner = max(values, key=lambda x: x[1])
+        else:
+            winner = min(values, key=lambda x: x[1])
+        
+        scores[winner[0]]["score"] += 1
+        scores[winner[0]]["wins"].append(description)
+    
+    # 找出總分最高者
+    winner_id = max(scores, key=lambda x: scores[x]["score"])
+    
+    return {
+        "id": winner_id,
+        "name": scores[winner_id]["name"],
+        "score": scores[winner_id]["score"],
+        "total_metrics": len(metrics_to_score),
+        "winning_categories": scores[winner_id]["wins"],
+    }
+
+
 def _calculate_tracking_error(
     portfolio_values: list,
     benchmark_values: list

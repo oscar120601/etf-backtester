@@ -19,6 +19,8 @@ import {
   Chip,
 } from '@mui/material';
 import { Delete as DeleteIcon, Add as AddIcon } from '@mui/icons-material';
+import TemplateSelector from '../components/TemplateSelector';
+import { PortfolioTemplate } from '../data/portfolioTemplates';
 import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -219,9 +221,17 @@ const Backtest: React.FC = () => {
               </Typography>
 
               {/* 投資組合配置 */}
-              <Typography variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
-                投資組合配置
-              </Typography>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2, mb: 1 }}>
+                <Typography variant="subtitle2">
+                  投資組合配置
+                </Typography>
+                <TemplateSelector
+                  onSelect={(template: PortfolioTemplate) => {
+                    setHoldings(template.holdings.map(h => ({ symbol: h.symbol, weight: h.weight })));
+                  }}
+                  disabled={loading}
+                />
+              </Box>
               
               {holdings.map((holding, index) => (
                 <Box key={index} sx={{ display: 'flex', gap: 1, mb: 1, alignItems: 'center' }}>
