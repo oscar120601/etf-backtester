@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "production"
     
     # 資料庫 - 支援 SQLite 和 PostgreSQL
-    DATABASE_URL: str = "sqlite:///./etf_backtest.db"
+    DATABASE_URL: str = "sqlite:///./etf_backtester.db"
     DATABASE_POOL_SIZE: int = 20
     
     # Redis (可選)

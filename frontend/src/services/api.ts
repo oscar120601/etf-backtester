@@ -11,8 +11,10 @@ import type {
 } from '../types';
 
 // 建立 axios 實例
+// 開發環境使用相對路徑以利用 Vite proxy，避免 CORS 問題
+// 生產環境使用 VITE_API_URL 環境變數
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1',
+  baseURL: import.meta.env.VITE_API_URL || '/api/v1',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -22,7 +24,7 @@ const api = axios.create({
 // ETF API
 export const etfAPI = {
   getAll: async (): Promise<ETF[]> => {
-    const response = await api.get('/etfs/');
+    const response = await api.get('/etfs');
     // 後端返回 { items: [...], total, page, limit }
     return response.data.items || response.data;
   },
@@ -42,7 +44,7 @@ export const etfAPI = {
   },
 
   search: async (query: string): Promise<ETF[]> => {
-    const response = await api.get('/etfs/', { params: { search: query } });
+    const response = await api.get('/etfs', { params: { search: query } });
     return response.data.items || response.data;
   },
 };

@@ -25,7 +25,7 @@ class ETFBase(BaseModel):
     currency: str = Field(default="USD", description="幣別")
     
     is_active: bool = Field(default=True, description="是否啟用")
-    is_recommended: bool = Field(default=False, description="是否推薦")
+    is_recommended: Optional[bool] = Field(default=False, description="是否推薦")
     
     min_data_year: Optional[int] = Field(None, description="最早資料年份")
     liquidity_score: Optional[int] = Field(None, description="流動性評分")
