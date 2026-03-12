@@ -102,15 +102,15 @@ const ETFList: React.FC = () => {
         </CardContent>
       </Card>
 
-      <TableContainer component={Paper}>
-        <Table>
+      <TableContainer component={Paper} sx={{ overflowX: 'auto' }}>
+        <Table sx={{ minWidth: 600 }}>
           <TableHead>
             <TableRow>
               <TableCell>代碼</TableCell>
               <TableCell>名稱</TableCell>
               <TableCell>資產類別</TableCell>
               <TableCell align="right">費用率</TableCell>
-              <TableCell>資產規模</TableCell>
+              <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>資產規模</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -119,7 +119,7 @@ const ETFList: React.FC = () => {
                 <TableCell>
                   <Typography fontWeight="bold">{etf.symbol}</Typography>
                 </TableCell>
-                <TableCell>{etf.name}</TableCell>
+                <TableCell sx={{ minWidth: 150 }}>{etf.name}</TableCell>
                 <TableCell>
                   <Chip
                     label={etf.asset_class}
@@ -132,7 +132,7 @@ const ETFList: React.FC = () => {
                     ? `${(etf.expense_ratio * 100).toFixed(2)}%`
                     : '-'}
                 </TableCell>
-                <TableCell>
+                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
                   {etf.aum
                     ? `$${(etf.aum / 1000000000).toFixed(1)}B`
                     : '-'}

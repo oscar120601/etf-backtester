@@ -212,13 +212,16 @@ function App() {
           component="main"
           sx={{ 
             flexGrow: 1, 
-            p: 3, 
+            p: { xs: 2, sm: 3 },
+            pt: { xs: 10, sm: 3 },  // 手機版頂部留白給 AppBar
+            pb: { xs: 10, sm: 3 },  // 手機版底部留白給 BottomNav
             width: { sm: `calc(100% - ${DRAWER_WIDTH}px)` },
             minHeight: '100vh',
-            bgcolor: '#f5f5f5'
+            bgcolor: '#f5f5f5',
+            overflowX: 'hidden',
           }}
         >
-          <Toolbar />
+          <Toolbar sx={{ display: { xs: 'none', sm: 'block' } }} />
           {currentPage === 'etfs' && <ETFList />}
           {currentPage === 'backtest' && <Backtest />}
           {currentPage === 'montecarlo' && <MonteCarlo />}
