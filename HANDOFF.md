@@ -2,6 +2,29 @@
 
 ## 📅 會話記錄
 
+### 2026-03-12 開發會話（第六部分：Week 1 完成 - ETF 擴充 + 一鍵啟動）
+
+#### 已完成工作
+- [x] **Week 1 任務全部完成**
+  - ETF 擴充：從 5 檔擴充到 **14 檔**
+    - 美股新增：VUAA, AVUV, QMOM, SCHD
+    - 英股新增：CNDX, EQQQ, AVWS, IUMO
+    - 國際新增：VXUS
+  - 每檔 ETF 約 1,550+ 筆日線資料（2020-01 到 2026-03）
+  - 製作一鍵啟動腳本：start-dev.bat 與 start-dev.ps1
+
+#### 目前 ETF 清單（14 檔）
+| 類別 | 數量 | ETF |
+|------|------|-----|
+| 美股大盤 | 4 | VTI, VOO, VUAA, QQQ |
+| 美股因子 | 4 | AVUV, QMOM, SCHD, IUMO |
+| 英股 ETF | 2 | CNDX, EQQQ |
+| 國際股票 | 2 | VT, VXUS |
+| 債券 | 1 | BND |
+| 國際價值 | 1 | AVWS |
+
+---
+
 ### 2026-03-12 開發會話（第五部分：數據修復與 Monte Carlo 驗證）
 
 #### 已完成工作
