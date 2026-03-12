@@ -89,12 +89,29 @@ npm run dev
 - 前端: http://localhost:5173
 - API 文件: http://localhost:8000/docs
 
-### Windows 一鍵啟動
+### Windows 一鍵啟動 (推薦)
+
+最簡單的啟動方式，自動開啟前後端：
 
 ```bash
-# 使用批次檔啟動
-start-simple.bat
+# 方法一：批次檔（最簡單）
+start-dev.bat
+
+# 方法二：PowerShell 進階版（彩色輸出、自動開瀏覽器）
+start-dev.ps1
+# 或
+powershell -ExecutionPolicy Bypass -File start-dev.ps1
 ```
+
+執行後會自動：
+1. 檢查 Python 和 Node.js 環境
+2. 建立/啟動 Python 虛擬環境
+3. 安裝缺少的相依套件
+4. 啟動後端 (http://localhost:8000)
+5. 啟動前端 (http://localhost:5173)
+6. 自動開啟瀏覽器 (PowerShell 版)
+
+按任意鍵即可關閉所有服務。
 
 ## 使用說明
 
