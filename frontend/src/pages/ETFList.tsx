@@ -16,6 +16,10 @@ import {
   TableHead,
   TableRow,
   Paper,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from '@mui/material';
 import { etfAPI } from '../services/api';
 import type { ETF } from '../types';
@@ -25,6 +29,7 @@ const ETFList: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedFactor, setSelectedFactor] = useState<string>('');
 
   useEffect(() => {
     const loadETFs = async () => {
@@ -46,9 +51,14 @@ const ETFList: React.FC = () => {
 
   // 過濾 ETF
   const filteredETFs = etfs.filter(
-    (etf) =>
-      etf.symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      etf.name.toLowerCase().includes(searchQuery.toLowerCase())
+    (etf) => {
+      const matchesSearch = 
+        etf.symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        etf.name.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesFactor = 
+        !selectedFactor || etf.factor_type === selectedFactor;
+      return matchesSearch && matchesFactor;
+    }
   );
 
   // 資產類別顏色映射
@@ -62,6 +72,9 @@ const ETFList: React.FC = () => {
     };
     return assetClass ? colors[assetClass] || 'default' : 'default';
   };
+
+  // 獲取唯一的因子類型列表
+  const factorTypes = Array.from(new Set(etfs.map(etf => etf.factor_type).filter(Boolean))).sort();
 
   if (loading) {
     return (
@@ -87,14 +100,34 @@ const ETFList: React.FC = () => {
 
       <Card sx={{ mb: 3 }}>
         <CardContent>
-          <TextField
-            fullWidth
-            label="搜尋 ETF"
-            placeholder="輸入代碼或名稱..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            sx={{ mb: 2 }}
-          />
+          <Grid container spacing={2} sx={{ mb: 2 }}>
+            <Grid item xs={12} md={8}>
+              <TextField
+                fullWidth
+                label="搜尋 ETF"
+                placeholder="輸入代碼或名稱..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </Grid>
+            <Grid item xs={12} md={4}>
+              <FormControl fullWidth>
+                <InputLabel>因子類型</InputLabel>
+                <Select
+                  value={selectedFactor}
+                  label="因子類型"
+                  onChange={(e) => setSelectedFactor(e.target.value)}
+                >
+                  <MenuItem value="">全部</MenuItem>
+                  {factorTypes.map((factor) => (
+                    <MenuItem key={factor} value={factor}>
+                      {factor}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+          </Grid>
 
           <Typography variant="body2" color="text.secondary">
             共找到 {filteredETFs.length} 檔 ETF
@@ -109,6 +142,7 @@ const ETFList: React.FC = () => {
               <TableCell>代碼</TableCell>
               <TableCell>名稱</TableCell>
               <TableCell>資產類別</TableCell>
+              <TableCell>因子類型</TableCell>
               <TableCell align="right">費用率</TableCell>
               <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>資產規模</TableCell>
             </TableRow>
@@ -126,6 +160,17 @@ const ETFList: React.FC = () => {
                     color={getAssetClassColor(etf.asset_class)}
                     size="small"
                   />
+                </TableCell>
+                <TableCell>
+                  {etf.factor_type ? (
+                    <Chip
+                      label={etf.factor_type}
+                      size="small"
+                      variant="outlined"
+                    />
+                  ) : (
+                    '-'
+                  )}
                 </TableCell>
                 <TableCell align="right">
                   {etf.expense_ratio

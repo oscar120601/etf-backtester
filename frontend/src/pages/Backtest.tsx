@@ -23,6 +23,8 @@ import TemplateSelector from '../components/TemplateSelector';
 import SaveBacktestDialog from '../components/SaveBacktestDialog';
 import BacktestCharts from '../components/BacktestCharts';
 import ExportReport from '../components/ExportReport';
+import SavedPortfoliosManager from '../components/SavedPortfoliosManager';
+import DrawdownAnalysis from '../components/DrawdownAnalysis';
 import { PortfolioTemplate } from '../data/portfolioTemplates';
 import { Line } from 'react-chartjs-2';
 import {
@@ -50,6 +52,10 @@ ChartJS.register(
   Tooltip,
   Legend
 );
+
+// 引入 chart 配置（註冊 zoom 插件）
+import '../utils/chartConfig';
+import { convertToTemplate } from '../utils/portfolioStorage';
 
 interface PortfolioHolding {
   symbol: string;
@@ -291,6 +297,16 @@ const Backtest: React.FC = () => {
                 <Typography variant="caption" color={Math.abs(totalWeight - 1) < 0.001 ? 'success.main' : 'error.main'}>
                   總權重: {(totalWeight * 100).toFixed(1)}%
                 </Typography>
+              </Box>
+
+              {/* 投資組合管理 */}
+              <Box sx={{ mb: 2 }}>
+                <SavedPortfoliosManager
+                  currentHoldings={holdings}
+                  onLoadPortfolio={(loadedHoldings) => {
+                    setHoldings(loadedHoldings.map(h => ({ symbol: h.symbol, weight: h.weight })));
+                  }}
+                />
               </Box>
 
               <Divider sx={{ my: 2 }} />
@@ -542,6 +558,11 @@ const Backtest: React.FC = () => {
                   </Grid>
                 </CardContent>
               </Card>
+
+              {/* 回撤分析 */}
+              <Box sx={{ mb: 3 }}>
+                <DrawdownAnalysis result={result} />
+              </Box>
 
               {/* 圖表分析 */}
               <BacktestCharts result={result} />

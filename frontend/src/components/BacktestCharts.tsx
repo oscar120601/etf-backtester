@@ -1,6 +1,8 @@
-import { useMemo } from 'react';
-import { Box, Card, CardContent, Typography, Grid } from '@mui/material';
+import { useMemo, useRef } from 'react';
+import { Box, Card, CardContent, Typography, Grid, Button, Stack } from '@mui/material';
 import { Line, Bar } from 'react-chartjs-2';
+import { Download as DownloadIcon, RestartAlt as ResetIcon } from '@mui/icons-material';
+import { getChartOptionsWithZoom, downloadChart, resetChartZoom } from '../utils/chartConfig';
 import type { BacktestResponse } from '../types';
 
 interface BacktestChartsProps {
@@ -8,6 +10,9 @@ interface BacktestChartsProps {
 }
 
 export default function BacktestCharts({ result }: BacktestChartsProps) {
+  // 圖表引用
+  const drawdownChartRef = useRef<any>(null);
+  const annualChartRef = useRef<any>(null);
   // 回撤圖數據
   const drawdownData = useMemo(() => {
     if (!result.time_series.drawdown?.length) return null;
@@ -28,7 +33,7 @@ export default function BacktestCharts({ result }: BacktestChartsProps) {
     };
   }, [result.time_series.drawdown]);
 
-  const drawdownOptions = {
+  const drawdownOptions = getChartOptionsWithZoom({
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
@@ -37,7 +42,7 @@ export default function BacktestCharts({ result }: BacktestChartsProps) {
       },
       title: {
         display: true,
-        text: '歷史回撤分析',
+        text: '歷史回撤分析 (滾輪縮放、Ctrl+拖曳平移)',
       },
       tooltip: {
         callbacks: {
@@ -54,7 +59,7 @@ export default function BacktestCharts({ result }: BacktestChartsProps) {
         },
       },
     },
-  };
+  });
 
   // 計算年度收益
   const annualReturns = useMemo(() => {
@@ -110,7 +115,7 @@ export default function BacktestCharts({ result }: BacktestChartsProps) {
     };
   }, [annualReturns]);
 
-  const annualReturnOptions = {
+  const annualReturnOptions = getChartOptionsWithZoom({
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
@@ -134,7 +139,7 @@ export default function BacktestCharts({ result }: BacktestChartsProps) {
         },
       },
     },
-  };
+  });
 
   // 計算月度收益熱力圖數據
   const monthlyReturns = useMemo(() => {
@@ -200,12 +205,32 @@ export default function BacktestCharts({ result }: BacktestChartsProps) {
       <Grid item xs={12}>
         <Card>
           <CardContent>
-            <Typography variant="h6" gutterBottom>
-              回撤分析
-            </Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Typography variant="h6">
+                回撤分析
+              </Typography>
+              <Stack direction="row" spacing={1}>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  startIcon={<DownloadIcon />}
+                  onClick={() => downloadChart(drawdownChartRef, 'drawdown_chart.png')}
+                >
+                  下載圖表
+                </Button>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  startIcon={<ResetIcon />}
+                  onClick={() => resetChartZoom(drawdownChartRef)}
+                >
+                  重置縮放
+                </Button>
+              </Stack>
+            </Box>
             <Box sx={{ height: 300 }}>
               {drawdownData ? (
-                <Line data={drawdownData} options={drawdownOptions} />
+                <Line ref={drawdownChartRef} data={drawdownData} options={drawdownOptions} />
               ) : (
                 <Typography color="text.secondary">無回撤數據</Typography>
               )}
@@ -218,12 +243,32 @@ export default function BacktestCharts({ result }: BacktestChartsProps) {
       <Grid item xs={12} md={6}>
         <Card>
           <CardContent>
-            <Typography variant="h6" gutterBottom>
-              年度報酬率
-            </Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Typography variant="h6">
+                年度報酬率
+              </Typography>
+              <Stack direction="row" spacing={1}>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  startIcon={<DownloadIcon />}
+                  onClick={() => downloadChart(annualChartRef, 'annual_returns_chart.png')}
+                >
+                  下載
+                </Button>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  startIcon={<ResetIcon />}
+                  onClick={() => resetChartZoom(annualChartRef)}
+                >
+                  重置
+                </Button>
+              </Stack>
+            </Box>
             <Box sx={{ height: 300 }}>
               {annualReturnData ? (
-                <Bar data={annualReturnData} options={annualReturnOptions} />
+                <Bar ref={annualChartRef} data={annualReturnData} options={annualReturnOptions} />
               ) : (
                 <Typography color="text.secondary">無年度數據</Typography>
               )}

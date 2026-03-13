@@ -88,7 +88,7 @@ def generate_sample_data(db: Session, symbol: str, start_date: str, end_date: st
     start = datetime.strptime(start_date, '%Y-%m-%d').date()
     end = datetime.strptime(end_date, '%Y-%m-%d').date()
     
-    # 初始價格
+    # 初始價格 (根據 ETF 特性設定)
     base_price = 100.0
     if symbol == 'VTI':
         base_price = 135.0
@@ -100,6 +100,23 @@ def generate_sample_data(db: Session, symbol: str, start_date: str, end_date: st
         base_price = 79.0
     elif symbol == 'VT':
         base_price = 70.0
+    # Phase 2 ETFs
+    elif symbol == 'VTV':  # Value
+        base_price = 95.0
+    elif symbol == 'VUG':  # Growth
+        base_price = 145.0
+    elif symbol == 'VBR':  # Small Value
+        base_price = 88.0
+    elif symbol == 'VBK':  # Small Growth
+        base_price = 135.0
+    elif symbol == 'VIG':  # Dividend Growth
+        base_price = 92.0
+    elif symbol == 'VYM':  # High Dividend
+        base_price = 75.0
+    elif symbol == 'DGRO':  # iShares Dividend Growth
+        base_price = 38.0
+    elif symbol == 'HDV':   # iShares High Dividend
+        base_price = 82.0
     
     # 設定年報酬率和波動率
     annual_return = 0.08  # 8% 年化報酬

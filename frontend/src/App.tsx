@@ -22,12 +22,18 @@ import {
   Casino as CasinoIcon,
   CompareArrows as CompareArrowsIcon,
   Save as SaveIcon,
+  AutoGraph as AutoGraphIcon,
+  BarChart as BarChartIcon,
+  Warning as WarningIcon,
 } from '@mui/icons-material'
 import ETFList from './pages/ETFList'
 import Backtest from './pages/Backtest'
 import MonteCarlo from './pages/MonteCarlo'
 import Comparison from './pages/Comparison'
 import SavedBacktests from './pages/SavedBacktests'
+import Optimizer from './pages/Optimizer'
+import Analysis from './pages/Analysis'
+import StressTest from './pages/StressTest'
 
 const theme = createTheme({
   palette: {
@@ -43,7 +49,7 @@ const theme = createTheme({
 
 const DRAWER_WIDTH = 240;
 
-type PageType = 'etfs' | 'backtest' | 'montecarlo' | 'comparison' | 'saved';
+type PageType = 'etfs' | 'backtest' | 'montecarlo' | 'comparison' | 'saved' | 'optimizer' | 'analysis' | 'stresstest';
 
 function App() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -60,6 +66,9 @@ function App() {
       case 'montecarlo': return '蒙地卡羅模擬';
       case 'comparison': return '投資組合比較';
       case 'saved': return '我的回測';
+      case 'optimizer': return '投資組合優化器';
+      case 'analysis': return '投資分析工具';
+      case 'stresstest': return '壓力測試';
       default: return 'ETF Backtester';
     }
   };
@@ -140,6 +149,48 @@ function App() {
               <SaveIcon />
             </ListItemIcon>
             <ListItemText primary="我的回測" />
+          </ListItemButton>
+        </ListItem>
+        <ListItem disablePadding>
+          <ListItemButton 
+            selected={currentPage === 'optimizer'}
+            onClick={() => {
+              setCurrentPage('optimizer');
+              setMobileOpen(false);
+            }}
+          >
+            <ListItemIcon>
+              <AutoGraphIcon />
+            </ListItemIcon>
+            <ListItemText primary="組合優化器" />
+          </ListItemButton>
+        </ListItem>
+        <ListItem disablePadding>
+          <ListItemButton 
+            selected={currentPage === 'analysis'}
+            onClick={() => {
+              setCurrentPage('analysis');
+              setMobileOpen(false);
+            }}
+          >
+            <ListItemIcon>
+              <BarChartIcon />
+            </ListItemIcon>
+            <ListItemText primary="投資分析" />
+          </ListItemButton>
+        </ListItem>
+        <ListItem disablePadding>
+          <ListItemButton 
+            selected={currentPage === 'stresstest'}
+            onClick={() => {
+              setCurrentPage('stresstest');
+              setMobileOpen(false);
+            }}
+          >
+            <ListItemIcon>
+              <WarningIcon />
+            </ListItemIcon>
+            <ListItemText primary="壓力測試" />
           </ListItemButton>
         </ListItem>
       </List>
@@ -227,6 +278,9 @@ function App() {
           {currentPage === 'montecarlo' && <MonteCarlo />}
           {currentPage === 'comparison' && <Comparison />}
           {currentPage === 'saved' && <SavedBacktests />}
+          {currentPage === 'optimizer' && <Optimizer />}
+          {currentPage === 'analysis' && <Analysis />}
+          {currentPage === 'stresstest' && <StressTest />}
         </Box>
       </Box>
     </ThemeProvider>

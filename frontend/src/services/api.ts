@@ -133,4 +133,174 @@ export const dataSyncAPI = {
   },
 };
 
+// 投資組合優化 API
+export const optimizerAPI = {
+  optimize: async (request: import('../types').OptimizationRequest): Promise<import('../types').OptimizationResponse> => {
+    const response = await api.post('/optimizer/mpt', request);
+    return response.data;
+  },
+
+  getEfficientFrontier: async (request: {
+    symbols: string[];
+    num_points?: number;
+    risk_free_rate?: number;
+    weight_constraints?: { min: number; max: number };
+    lookback_years?: number;
+  }): Promise<{
+    frontier_id: string;
+    points: import('../types').EfficientFrontierPoint[];
+    max_sharpe_point: import('../types').EfficientFrontierPoint;
+    min_volatility_point: import('../types').EfficientFrontierPoint;
+    individual_assets: import('../types').IndividualAsset[];
+    generated_at: string;
+  }> => {
+    const response = await api.post('/optimizer/efficient-frontier', {
+      num_points: 50,
+      ...request
+    });
+    return response.data;
+  },
+
+  getObjectives: async (): Promise<{
+    objectives: import('../types').OptimizationObjective[];
+    risk_free_rate_note: string;
+    weight_constraints_note: string;
+  }> => {
+    const response = await api.get('/optimizer/objectives');
+    return response.data;
+  },
+};
+
+// 投資分析 API
+export const analysisAPI = {
+  getRollingReturns: async (request: {
+    portfolio: Record<string, number>;
+    start_date?: string;
+    end_date?: string;
+    window_years?: number[];
+  }): Promise<{
+    analysis_id: string;
+    portfolio: Record<string, number>;
+    periods: Record<string, {
+      window_years: number;
+      dates: string[];
+      returns: number[];
+      stats: {
+        mean: number;
+        median: number;
+        std: number;
+        min: number;
+        max: number;
+        percentile_5: number;
+        percentile_25: number;
+        percentile_75: number;
+        percentile_95: number;
+        positive_ratio: number;
+      };
+    }>;
+    summary: any;
+    generated_at: string;
+  }> => {
+    const response = await api.post('/analysis/rolling-returns', request);
+    return response.data;
+  },
+
+  getCorrelationMatrix: async (params: {
+    symbols: string;
+    lookback_years?: number;
+    method?: string;
+  }): Promise<{
+    analysis_id: string;
+    symbols: string[];
+    lookback_years: number;
+    method: string;
+    heatmap: {
+      symbols: string[];
+      data: Array<{
+        x: string;
+        y: string;
+        value: number;
+        color: string;
+        level: any;
+      }>;
+      matrix: Record<string, Record<string, number>>;
+    };
+    summary: any;
+    generated_at: string;
+  }> => {
+    const response = await api.get('/analysis/correlation-matrix', { params });
+    return response.data;
+  },
+
+  getCorrelationLevels: async (): Promise<{
+    levels: Array<{
+      key: string;
+      range: number[];
+      description: string;
+      color: string;
+      interpretation: string;
+    }>;
+    interpretation_guide: Record<string, string>;
+  }> => {
+    const response = await api.get('/analysis/correlation-levels');
+    return response.data;
+  },
+};
+
+// 壓力測試 API
+export const stressTestAPI = {
+  getScenarios: async (): Promise<{
+    scenarios: Array<{
+      id: string;
+      name: string;
+      description: string;
+      start_date: string;
+      end_date: string;
+      benchmark: string;
+    }>;
+  }> => {
+    const response = await api.get('/stress-test/scenarios');
+    return response.data;
+  },
+
+  runStressTest: async (request: {
+    portfolio: Record<string, number>;
+    scenario_id: string;
+  }): Promise<any> => {
+    const response = await api.post('/stress-test/run', request);
+    return response.data;
+  },
+
+  runAllStressTests: async (request: {
+    portfolio: Record<string, number>;
+  }): Promise<any> => {
+    const response = await api.post('/stress-test/run-all', request);
+    return response.data;
+  },
+
+  getInflationAdjusted: async (request: {
+    nominal_values: Array<{ date: string; value: number }>;
+  }): Promise<any> => {
+    const response = await api.post('/stress-test/inflation-adjusted', request);
+    return response.data;
+  },
+
+  getPurchasingPower: async (request: {
+    initial_amount: number;
+    years: number;
+    inflation_rate?: number;
+  }): Promise<any> => {
+    const response = await api.post('/stress-test/purchasing-power', request);
+    return response.data;
+  },
+
+  getInflationData: async (params?: {
+    start_year?: number;
+    end_year?: number;
+  }): Promise<any> => {
+    const response = await api.get('/stress-test/inflation-data', { params });
+    return response.data;
+  },
+};
+
 export default api;

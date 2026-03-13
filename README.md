@@ -1,31 +1,91 @@
 # ETF Backtester
 
-一個功能完整的 ETF 投資組合回測工具，使用 FastAPI + React + TypeScript 開發。
+一個專業級的 ETF 投資組合回測與分析工具，使用 FastAPI + React + TypeScript 開發。
 
 ## 功能特色
 
-- 📊 **歷史回測**：根據歷史數據回測投資組合表現
-- 🎲 **蒙地卡羅模擬**：預測未來可能的投資組合走勢
-- 📈 **績效指標**：計算 CAGR、夏普比率、最大回撤等多種指標
-- 🔄 **再平衡策略**：支援多種再平衡頻率設定
-- 💰 **定期定額**：支援每月定期投入的回測
-- 📉 **風險分析**：計算 VaR、CVaR 等風險指標
-- 📱 **響應式設計**：支援桌面與行動裝置
+### 📊 核心功能
+- **歷史回測**：根據歷史數據回測投資組合表現
+- **蒙地卡羅模擬**：預測未來可能的投資組合走勢（10-50年）
+- **多組合比較**：同時比較最多 3 組投資組合
+- **投資組合優化**：基於現代投資組合理論（MPT）的效率前緣分析
+- **壓力測試**：模擬 6 種歷史危機情境下的表現
+
+### 📈 分析工具
+- **滾動報酬分析**：1/3/5/10 年滾動期間的報酬分布
+- **相關性矩陣**：ETF 間價格相關性熱力圖
+- **回撤分析**：歷史回撤幅度、持續時間、恢復統計
+- **通膨調整**：計算實質報酬與購買力變化
+- **月度/年度熱力圖**：視覺化呈現各期間報酬
+
+### 💼 實用功能
+- **報告匯出**：PDF、CSV、Excel 多格式支援
+- **投資組合存檔**：使用 localStorage 儲存多個配置
+- **預設模板**：60/40、全天候、科技股集中等一鍵套用
+- **互動圖表**：支援縮放、平移、下載
+- **因子篩選**：按價值、成長、股息等因子分類
+
+## 支援的 ETF
+
+目前支援 **22 檔** ETF：
+
+### 美股大盤
+| 代碼 | 名稱 | 類型 |
+|------|------|------|
+| VTI | Vanguard Total Stock Market ETF | 全市場 |
+| VOO | Vanguard S&P 500 ETF | S&P 500 |
+| VUAA | Vanguard S&P 500 UCITS ETF | 累積型 |
+
+### 科技成長
+| 代碼 | 名稱 | 類型 |
+|------|------|------|
+| QQQ | Invesco QQQ Trust | 納斯達克100 |
+| CNDX | iShares NASDAQ 100 UCITS ETF | 英鎊計價 |
+| EQQQ | Invesco EQQQ NASDAQ-100 UCITS ETF | 歐元計價 |
+
+### 因子投資
+| 代碼 | 名稱 | 類型 |
+|------|------|------|
+| VTV | Vanguard Value ETF | 大型價值 |
+| VUG | Vanguard Growth ETF | 大型成長 |
+| VBR | Vanguard Small-Cap Value ETF | 小型價值 |
+| VBK | Vanguard Small-Cap Growth ETF | 小型成長 |
+| AVUV | Avantis U.S. Small Cap Value ETF | 小型價值（進階）|
+| QMOM | Alpha Architect U.S. Quantitative Momentum ETF | 動能 |
+| IUMO | iShares MSCI USA Momentum Factor UCITS ETF | 動能因子 |
+
+### 股息策略
+| 代碼 | 名稱 | 類型 |
+|------|------|------|
+| SCHD | Schwab US Dividend Equity ETF | 股息貴族 |
+| VIG | Vanguard Dividend Appreciation ETF | 股息成長 |
+| VYM | Vanguard High Dividend Yield ETF | 高股息 |
+| DGRO | iShares Core Dividend Growth ETF | 核心股息成長 |
+| HDV | iShares Core High Dividend ETF | 核心高股息 |
+
+### 債券與國際
+| 代碼 | 名稱 | 類型 |
+|------|------|------|
+| BND | Vanguard Total Bond Market ETF | 總債券市場 |
+| VT | Vanguard Total World Stock ETF | 全球股票 |
+| VXUS | Vanguard Total International Stock ETF | 國際股票 |
+| AVWS | Avantis International Small Cap Value ETF | 國際小型價值 |
 
 ## 技術架構
 
 ### 後端
 - **FastAPI**：現代、快速的 Python Web 框架
 - **SQLAlchemy**：ORM 資料庫操作
-- **SQLite**：開發環境使用（可升級至 PostgreSQL）
+- **SQLite**：開發環境（可升級至 PostgreSQL）
 - **Pandas/NumPy**：數據處理與計算
+- **SciPy**：投資組合優化計算
 
 ### 前端
 - **React 18**：使用者介面框架
 - **TypeScript**：型別安全的 JavaScript
 - **Material-UI (MUI)**：現代化 UI 組件庫
-- **Chart.js**：圖表繪製
-- **Axios**：HTTP 客戶端
+- **Chart.js + react-chartjs-2**：圖表繪製
+- **chartjs-plugin-zoom**：圖表互動功能
 
 ## 快速開始
 
@@ -33,48 +93,37 @@
 - Python 3.10+
 - Node.js 18+
 
-### 安裝步驟
-
-#### 1. 複製專案
+### Windows 一鍵啟動（推薦）
 
 ```bash
-git clone https://github.com/oscar120601/etf-backtester.git
-cd etf-backtester
+# 最簡單的啟動方式
+start-dev.bat
+
+# 或 PowerShell 進階版（彩色輸出、自動開瀏覽器）
+powershell -ExecutionPolicy Bypass -File start-dev.ps1
 ```
 
-#### 2. 設定後端
+### 手動啟動
+
+#### 1. 設定後端
 
 ```bash
-# 建立虛擬環境
 cd backend
-python -m venv venv
 
-# 啟動虛擬環境
-# Windows:
-venv\Scripts\activate
-# macOS/Linux:
-source venv/bin/activate
+# 建立虛擬環境
+python -m venv venv
+venv\Scripts\activate  # Windows
 
 # 安裝依賴
 pip install -r requirements.txt
-
-# 初始化資料庫
-python -c "from app.db.init_db import init_db; init_db()"
-
-# 匯入範例價格資料
-python -m app.db.import_prices --csv ../data/etf_prices_sample.csv
-
-# 或產生模擬資料
-python -m app.db.import_prices --generate --symbol VTI --start-date 2020-01-01 --end-date 2025-03-10
 
 # 啟動開發伺服器
 uvicorn app.main:app --reload --port 8000
 ```
 
-#### 3. 設定前端
+#### 2. 設定前端
 
 ```bash
-# 在另一個終端視窗
 cd frontend
 
 # 安裝依賴
@@ -84,97 +133,46 @@ npm install
 npm run dev
 ```
 
-#### 4. 開啟瀏覽器
+#### 3. 開啟瀏覽器
 
 - 前端: http://localhost:5173
 - API 文件: http://localhost:8000/docs
 
-### Windows 一鍵啟動 (推薦)
+## 使用指南
 
-最簡單的啟動方式，自動開啟前後端：
+### 1. 投資組合回測
 
-```bash
-# 方法一：批次檔（最簡單）
-start-dev.bat
+1. 點擊「投資組合回測」頁面
+2. 選擇 ETF 並設定權重（總和需為 100%）
+3. 設定回測參數（日期、初始金額、再平衡頻率）
+4. 點擊「執行回測」
+5. 查看績效摘要與圖表分析
 
-# 方法二：PowerShell 進階版（彩色輸出、自動開瀏覽器）
-start-dev.ps1
-# 或
-powershell -ExecutionPolicy Bypass -File start-dev.ps1
-```
+### 2. 投資組合優化
 
-執行後會自動：
-1. 檢查 Python 和 Node.js 環境
-2. 建立/啟動 Python 虛擬環境
-3. 安裝缺少的相依套件
-4. 啟動後端 (http://localhost:8000)
-5. 啟動前端 (http://localhost:5173)
-6. 自動開啟瀏覽器 (PowerShell 版)
+1. 點擊「投資組合優化」頁面
+2. 選擇 2-10 檔 ETF
+3. 選擇優化目標（最大夏普比率、最小波動率等）
+4. 查看效率前緣與最佳配置建議
 
-按任意鍵即可關閉所有服務。
+### 3. 多組合比較
 
-## 使用說明
+1. 點擊「多組合比較」頁面
+2. 設定最多 3 組投資組合
+3. 執行比較查看並排結果
 
-### 1. ETF 列表
+### 4. 風險分析
 
-- 點擊左側選單「ETF 列表」
-- 瀏覽系統支援的 ETF 資訊
-- 使用搜尋框快速找到特定 ETF
+- **壓力測試**：測試組合在歷史危機中的表現
+- **滾動報酬**：分析不同持有期間的報酬分布
+- **相關性分析**：檢視 ETF 間的相關性
 
-### 2. 投資組合回測
+### 5. 報告匯出
 
-- 點擊左側選單「投資組合回測」
-- 配置投資組合：
-  - 選擇 ETF（最多 10 檔）
-  - 設定權重（總和需為 100%）
-- 設定回測參數：
-  - 開始/結束日期
-  - 初始投資金額
-  - 再平衡頻率
-  - 每月定期投入（選填）
-- 點擊「執行回測」查看結果
-
-### 3. 解讀回測結果
-
-- **績效摘要**：總報酬率、年化報酬率、最大回撤、夏普比率
-- **價值走勢圖**：投資組合與基準的比較
-- **詳細指標**：波動率、索丁諾比率、卡瑪比率等
-- **年度統計**：最佳/最差年度表現、正報酬年數
-
-### 4. 蒙地卡羅模擬
-
-- 點擊左側選單「蒙地卡羅模擬」
-- 選擇 ETF 並設定參數：
-  - 初始金額與定期定額
-  - 模擬年數（10-50 年）
-  - 模擬次數（100-5000 次）
-  - 目標金額
-- 點擊「執行模擬」查看結果
-
-### 5. 解讀蒙地卡羅結果
-
-- **達成目標機率**：達成設定目標的機率
-- **百分位數路徑**：不同情境下的預測走勢
-- **關鍵年份預測**：第 5/10/20 年的預測價值
-
-## 資料匯入
-
-### 從 CSV 匯入
-
-```bash
-# 匯入 CSV 檔案
-cd backend
-python -m app.db.import_prices --csv ../data/etf_prices_sample.csv
-```
-
-CSV 格式：`symbol,date,open,high,low,close,adjusted_close,volume,dividend`
-
-### 產生模擬資料
-
-```bash
-# 產生指定 ETF 的模擬資料
-python -m app.db.import_prices --generate --symbol VTI --start-date 2020-01-01 --end-date 2025-03-10
-```
+回測結果支援三種格式匯出：
+- **PDF**：完整報告含圖表
+- **CSV**：時間序列數據
+- **Excel**：多工作表詳細分析
 
 ## API 端點
 
@@ -187,51 +185,20 @@ python -m app.db.import_prices --generate --symbol VTI --start-date 2020-01-01 -
 - `POST /api/v1/backtest/run` - 執行回測
 - `POST /api/v1/backtest/monte-carlo` - 蒙地卡羅模擬
 - `POST /api/v1/backtest/compare` - 多組合比較
-- `GET /api/v1/backtest/supported-etfs` - 取得支援的 ETF 列表
+
+### 分析工具
+- `POST /api/v1/analysis/rolling-returns` - 滾動報酬分析
+- `GET /api/v1/analysis/correlation-matrix` - 相關性矩陣
+- `POST /api/v1/stress-test/run` - 壓力測試
+- `GET /api/v1/stress-test/scenarios` - 取得危機情境
+
+### 投資組合優化
+- `POST /api/v1/optimizer/mpt` - MPT 優化
+- `POST /api/v1/optimizer/efficient-frontier` - 效率前緣計算
 
 ### 回測儲存
 - `GET /api/v1/saved-backtests` - 取得儲存的回測列表
 - `POST /api/v1/saved-backtests` - 儲存回測結果
-- `GET /api/v1/saved-backtests/{id}` - 取得單個回測詳情
-- `PUT /api/v1/saved-backtests/{id}` - 更新回測資訊
-- `DELETE /api/v1/saved-backtests/{id}` - 刪除回測
-
-### 資料同步
-- `GET /api/v1/data-sync/price-status` - 取得 ETF 價格更新狀態
-- `POST /api/v1/data-sync/update-prices` - 更新 ETF 價格資料
-- `POST /api/v1/data-sync/update-single/{symbol}` - 更新單一 ETF
-
-### 系統
-- `GET /health` - 健康檢查
-- `GET /` - 服務狀態
-
-## 開發計畫
-
-### 已完成 ✅
-- [x] 專案架構設計
-- [x] 資料庫模型設計
-- [x] 後端 API 開發
-- [x] 回測引擎實作
-- [x] 績效指標計算
-- [x] 前端介面開發
-- [x] 資料匯入功能
-- [x] 蒙地卡羅模擬
-- [x] 前端優化（Loading、錯誤處理）
-- [x] 多組合比較功能
-- [x] 預設模板功能
-- [x] 回測結果儲存
-- [x] 報告匯出功能（PDF/CSV）
-- [x] 更多圖表類型（回撤圖、熱力圖）
-- [x] 資料同步機制
-- [x] 響應式設計優化
-- [x] 部署配置準備
-
-### 進行中 🚀
-- [ ] 生產環境部署
-
-### 待開發 📋
-- [ ] 使用者認證系統
-- [ ] 社交登入（Google/GitHub）
 
 ## 專案結構
 
@@ -240,7 +207,7 @@ etf-backtester/
 ├── backend/              # FastAPI 後端
 │   ├── app/
 │   │   ├── api/v1/endpoints/   # API 端點
-│   │   ├── core/               # 回測引擎與指標計算
+│   │   ├── core/               # 回測引擎與分析工具
 │   │   ├── db/                 # 資料庫與匯入腳本
 │   │   ├── models/             # SQLAlchemy 模型
 │   │   └── schemas/            # Pydantic 模型
@@ -250,13 +217,73 @@ etf-backtester/
 │   │   ├── components/         # UI 組件
 │   │   ├── pages/              # 頁面
 │   │   ├── services/           # API 服務
+│   │   ├── utils/              # 工具函數
 │   │   └── types/              # TypeScript 類型
 │   └── package.json
 ├── data/                 # 範例資料
-│   └── etf_prices_sample.csv
 ├── docs/                 # 技術文件
 └── README.md
 ```
+
+## 開發計畫
+
+### v1.0 已完成 ✅
+- [x] 22 檔 ETF 數據
+- [x] 歷史回測引擎
+- [x] 蒙地卡羅模擬
+- [x] 多組合比較
+- [x] 投資組合優化（MPT）
+- [x] 壓力測試（6 種危機情境）
+- [x] 滾動報酬分析
+- [x] 相關性矩陣
+- [x] 通膨調整報酬
+- [x] 報告匯出（PDF/CSV/Excel）
+- [x] 投資組合存檔
+- [x] 互動圖表（縮放/平移/下載）
+- [x] 回撤分析
+
+### v1.1 規劃中 🚀
+- [ ] 更多 ETF（全球市場、債券類別）
+- [ ] 戰術資產配置回測
+- [ ] 稅務影響分析
+- [ ] 使用者認證系統
+
+## 📊 與 Portfolio Visualizer 對標
+
+| 功能 | Portfolio Visualizer | 我們目前 |
+|------|---------------------|---------|
+| 投資組合回測 | ✅ | ✅ |
+| Monte Carlo | ✅ | ✅ |
+| 多組合比較 | ✅ | ✅ |
+| 滾動報酬分析 | ✅ | ✅ |
+| 相關性矩陣 | ✅ | ✅ |
+| 壓力測試 | ✅ | ✅ |
+| 投資組合優化器 | ✅ | ✅ |
+| 通膨調整 | ✅ | ✅ |
+| 報告匯出 | ✅ | ✅ |
+
+## 部署上線
+
+### 快速部署
+
+專案已配置好部署檔案：
+
+#### 後端部署 (Railway)
+```bash
+cd backend
+railway login
+railway init
+railway up
+```
+
+#### 前端部署 (Vercel)
+```bash
+cd frontend
+vercel login
+vercel
+```
+
+詳細部署指南參見 [DEPLOY.md](DEPLOY.md)
 
 ## 貢獻指南
 
@@ -265,43 +292,6 @@ etf-backtester/
 ## 授權
 
 MIT License
-
-## 部署上線
-
-### 快速部署
-
-專案已配置好部署檔案，可直接部署到以下平台：
-
-#### 後端部署 (Railway)
-
-```bash
-cd backend
-
-# 使用 Railway CLI
-railway login
-railway init
-railway up
-```
-
-#### 前端部署 (Vercel)
-
-```bash
-cd frontend
-
-# 使用 Vercel CLI
-vercel login
-vercel
-```
-
-### 詳細部署指南
-
-參見 [DEPLOY.md](DEPLOY.md) 獲取完整的部署步驟和故障排除指南。
-
-### 生產環境 URL
-
-部署後更新以下配置：
-- 後端 API: `https://your-api.up.railway.app`
-- 前端網站: `https://your-app.vercel.app`
 
 ## 免責聲明
 

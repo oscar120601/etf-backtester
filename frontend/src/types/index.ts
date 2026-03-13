@@ -147,3 +147,69 @@ export interface SavedBacktestCreate {
   parameters: BacktestParameters;
   result?: BacktestResponse;
 }
+
+// ============================================
+// 投資組合優化相關類型
+// ============================================
+
+export interface WeightConstraints {
+  min: number;
+  max: number;
+}
+
+export interface OptimizationRequest {
+  symbols: string[];
+  objective: 'max_sharpe' | 'min_volatility' | 'target_return';
+  target_return?: number;
+  risk_free_rate: number;
+  weight_constraints: WeightConstraints;
+  lookback_years: number;
+}
+
+export interface OptimizedPortfolio {
+  name: string;
+  description: string;
+  objective: string;
+  weights: Record<string, number>;
+  expected_return: number;
+  volatility: number;
+  sharpe_ratio: number;
+}
+
+export interface EfficientFrontierPoint {
+  volatility: number;
+  expected_return: number;
+  sharpe_ratio: number;
+}
+
+export interface IndividualAsset {
+  symbol: string;
+  expected_return: number;
+  volatility: number;
+  sharpe_ratio: number;
+}
+
+export interface OptimizationMetadata {
+  risk_free_rate: number;
+  symbols: string[];
+  lookback_period: string;
+  optimization_method: string;
+}
+
+export interface OptimizationResponse {
+  optimization_id: string;
+  recommended_portfolios: Record<string, OptimizedPortfolio>;
+  efficient_frontier: EfficientFrontierPoint[];
+  individual_assets: IndividualAsset[];
+  metadata: OptimizationMetadata;
+  generated_at: string;
+  execution_time_ms: number;
+}
+
+export interface OptimizationObjective {
+  id: string;
+  name: string;
+  description: string;
+  recommended_for: string;
+  risk_profile: string;
+}

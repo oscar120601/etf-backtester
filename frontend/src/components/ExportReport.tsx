@@ -19,9 +19,11 @@ import {
   FileDownload as DownloadIcon,
   PictureAsPdf as PdfIcon,
   TableChart as CsvIcon,
+  ViewList as ExcelIcon,
 } from '@mui/icons-material';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import * as XLSX from 'xlsx';
 import type { BacktestResponse } from '../types';
 
 interface ExportReportProps {
@@ -119,6 +121,89 @@ export default function ExportReport({ result, chartRef }: ExportReportProps) {
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       setError('匯出 CSV 失敗，請稍後再試');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 匯出 Excel
+  const exportExcel = () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // 建立工作簿
+      const wb = XLSX.utils.book_new();
+
+      // 1. 投資組合配置工作表
+      const portfolioData = result.portfolio.map((holding) => ({
+        '代碼': holding.symbol,
+        '權重': `${(holding.weight * 100).toFixed(2)}%`,
+        '權重(小數)': holding.weight,
+      }));
+      const portfolioWS = XLSX.utils.json_to_sheet(portfolioData);
+      XLSX.utils.book_append_sheet(wb, portfolioWS, '投資組合配置');
+
+      // 2. 回測參數工作表
+      const paramsData = [
+        { '參數': '開始日期', '值': result.parameters.start_date },
+        { '參數': '結束日期', '值': result.parameters.end_date },
+        { '參數': '初始金額', '值': result.parameters.initial_amount },
+        { '參數': '再平衡頻率', '值': result.parameters.rebalance_frequency },
+        { '參數': '每月投入', '值': result.parameters.monthly_contribution || 0 },
+        { '參數': '基準指標', '值': result.parameters.benchmark || 'SPY' },
+      ];
+      const paramsWS = XLSX.utils.json_to_sheet(paramsData);
+      XLSX.utils.book_append_sheet(wb, paramsWS, '回測參數');
+
+      // 3. 績效摘要工作表
+      const metricsData = [
+        { '指標': '總報酬率', '值': result.metrics.total_return, '百分比': `${(result.metrics.total_return * 100).toFixed(2)}%` },
+        { '指標': '年化報酬率 (CAGR)', '值': result.metrics.cagr, '百分比': `${(result.metrics.cagr * 100).toFixed(2)}%` },
+        { '指標': '年化波動率', '值': result.metrics.volatility, '百分比': `${(result.metrics.volatility * 100).toFixed(2)}%` },
+        { '指標': '最大回撤', '值': result.metrics.max_drawdown, '百分比': `${(result.metrics.max_drawdown * 100).toFixed(2)}%` },
+        { '指標': '夏普比率', '值': result.metrics.sharpe_ratio, '百分比': '' },
+        { '指標': '索提諾比率', '值': result.metrics.sortino_ratio, '百分比': '' },
+        { '指標': '卡爾瑪比率', '值': result.metrics.calmar_ratio, '百分比': '' },
+        { '指標': '最佳年份報酬', '值': result.metrics.best_year, '百分比': `${(result.metrics.best_year * 100).toFixed(2)}%` },
+        { '指標': '最差年份報酬', '值': result.metrics.worst_year, '百分比': `${(result.metrics.worst_year * 100).toFixed(2)}%` },
+        { '指標': '正報酬年份數', '值': result.metrics.positive_years, '百分比': '' },
+        { '指標': '負報酬年份數', '值': result.metrics.negative_years, '百分比': '' },
+        { '指標': '風險值 VaR (95%)', '值': result.metrics.var_95, '百分比': `${(result.metrics.var_95 * 100).toFixed(2)}%` },
+        { '指標': '條件風險值 CVaR (95%)', '值': result.metrics.cvar_95, '百分比': `${(result.metrics.cvar_95 * 100).toFixed(2)}%` },
+      ];
+      const metricsWS = XLSX.utils.json_to_sheet(metricsData);
+      XLSX.utils.book_append_sheet(wb, metricsWS, '績效摘要');
+
+      // 4. 時間序列數據工作表
+      const timeSeriesData = result.time_series.portfolio_value.map((point, index) => ({
+        '日期': point.date,
+        '投資組合價值': point.value,
+        '回撤幅度': result.time_series.drawdown[index]?.value || 0,
+        '回撤百分比': `${((result.time_series.drawdown[index]?.value || 0) * 100).toFixed(2)}%`,
+      }));
+      const timeSeriesWS = XLSX.utils.json_to_sheet(timeSeriesData);
+      XLSX.utils.book_append_sheet(wb, timeSeriesWS, '時間序列數據');
+
+      // 5. 年度報酬工作表
+      if (result.time_series.annual_returns) {
+        const annualData = result.time_series.annual_returns.map((item) => ({
+          '年份': item.year,
+          '年度報酬': item.return,
+          '報酬百分比': `${(item.return * 100).toFixed(2)}%`,
+        }));
+        const annualWS = XLSX.utils.json_to_sheet(annualData);
+        XLSX.utils.book_append_sheet(wb, annualWS, '年度報酬');
+      }
+
+      // 下載 Excel 檔案
+      XLSX.writeFile(wb, `backtest_report_${result.backtest_id}.xlsx`);
+
+      setSuccess('Excel 報告已成功匯出！');
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err) {
+      console.error('Excel export error:', err);
+      setError('匯出 Excel 失敗，請稍後再試');
     } finally {
       setLoading(false);
     }
@@ -297,6 +382,19 @@ export default function ExportReport({ result, chartRef }: ExportReportProps) {
                 {loading && <CircularProgress size={20} />}
               </ListItemButton>
             </ListItem>
+
+            <ListItem disablePadding>
+              <ListItemButton onClick={exportExcel} disabled={loading}>
+                <ListItemIcon>
+                  <ExcelIcon color="success" />
+                </ListItemIcon>
+                <ListItemText
+                  primary="匯出 Excel"
+                  secondary="多工作表 Excel 檔案，包含所有數據"
+                />
+                {loading && <CircularProgress size={20} />}
+              </ListItemButton>
+            </ListItem>
           </List>
 
           <Box sx={{ mt: 2, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
@@ -313,7 +411,10 @@ export default function ExportReport({ result, chartRef }: ExportReportProps) {
               • 績效指標（CAGR、夏普比率、最大回撤等）
             </Typography>
             <Typography variant="caption" component="div" color="text.secondary">
-              • 時間序列數據（CSV）
+              • 時間序列數據（CSV/Excel）
+            </Typography>
+            <Typography variant="caption" component="div" color="text.secondary">
+              • 年度報酬分析（Excel）
             </Typography>
           </Box>
         </DialogContent>
