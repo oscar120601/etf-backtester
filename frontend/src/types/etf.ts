@@ -20,6 +20,7 @@ export interface ETF {
   risk_level?: number
   tags?: string[]
   description?: string
+  aum?: number
   tracking_index_name?: string
   tracking_index_symbol?: string
   created_at: string

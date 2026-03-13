@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Box,
   Button,
@@ -14,7 +14,6 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Alert,
   CircularProgress,
 } from '@mui/material';
 import { Line } from 'react-chartjs-2';
@@ -153,7 +152,7 @@ const MonteCarlo: React.FC = () => {
       y: {
         beginAtZero: true,
         ticks: {
-          callback: (value: number) => `$${(value / 1000).toFixed(0)}k`,
+          callback: (value: string | number) => `$${(Number(value) / 1000).toFixed(0)}k`,
         },
       },
     },

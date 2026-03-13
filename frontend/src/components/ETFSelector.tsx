@@ -1,4 +1,3 @@
-import React from 'react';
 import {
   Box,
   FormControl,
@@ -27,7 +26,6 @@ interface ETFSelectorProps {
 
 export default function ETFSelector({ selectedETFs, onChange, availableETFs }: ETFSelectorProps) {
   const totalWeight = selectedETFs.reduce((sum, h) => sum + h.weight, 0);
-  const remainingWeight = Math.max(0, 1 - totalWeight);
 
   const addETF = () => {
     if (availableETFs.length === 0) return;

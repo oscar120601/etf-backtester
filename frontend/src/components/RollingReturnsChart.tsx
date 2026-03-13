@@ -45,52 +45,7 @@ interface RollingReturnsChartProps {
 const RollingReturnsChart: React.FC<RollingReturnsChartProps> = ({ periods }) => {
   const windows = Object.keys(periods).sort((a, b) => Number(a) - Number(b));
 
-  // 箱型圖數據
-  const boxPlotData = {
-    labels: windows.map(w => `${w}年`),
-    datasets: [
-      {
-        label: '箱型圖區間',
-        data: windows.map(w => {
-          const stats = periods[w].stats;
-          return {
-            x: `${w}年`,
-            min: stats.min,
-            q1: stats.percentile_25,
-            median: stats.median,
-            q3: stats.percentile_75,
-            max: stats.max,
-          };
-        }),
-        backgroundColor: 'rgba(25, 118, 210, 0.3)',
-        borderColor: 'rgba(25, 118, 210, 1)',
-        borderWidth: 2,
-      },
-      {
-        label: '平均報酬',
-        data: windows.map(w => periods[w].stats.mean),
-        type: 'line' as const,
-        borderColor: 'rgba(220, 0, 78, 1)',
-        backgroundColor: 'rgba(220, 0, 78, 0.8)',
-        pointRadius: 6,
-        pointHoverRadius: 8,
-        borderWidth: 2,
-      },
-      {
-        label: '中位數',
-        data: windows.map(w => periods[w].stats.median),
-        type: 'line' as const,
-        borderColor: 'rgba(76, 175, 80, 1)',
-        backgroundColor: 'rgba(76, 175, 80, 0.8)',
-        pointRadius: 6,
-        pointHoverRadius: 8,
-        borderWidth: 2,
-        borderDash: [5, 5],
-      },
-    ],
-  };
-
-  // 分布圖數據（使用不同的圖表類型）
+  // 分布圖數據
   const distributionData = {
     labels: windows.map(w => `${w}年`),
     datasets: [

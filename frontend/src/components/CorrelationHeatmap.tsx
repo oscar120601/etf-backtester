@@ -53,7 +53,7 @@ const CorrelationHeatmap: React.FC<CorrelationHeatmapProps> = ({ heatmap, symbol
           {/* Y軸標籤 */}
           <div style={{ marginRight: '10px' }}>
             <div style={{ height: headerSize }} /> {/* 角落空白 */}
-            {symbols.map((symbol, idx) => (
+            {symbols.map((symbol) => (
               <div
                 key={symbol}
                 style={{
@@ -74,7 +74,7 @@ const CorrelationHeatmap: React.FC<CorrelationHeatmapProps> = ({ heatmap, symbol
           <div>
             {/* X軸標籤 */}
             <div style={{ display: 'flex', marginBottom: '10px' }}>
-              {symbols.map((symbol, idx) => (
+              {symbols.map((symbol) => (
                 <div
                   key={symbol}
                   style={{

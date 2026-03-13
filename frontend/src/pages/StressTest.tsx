@@ -13,7 +13,6 @@ import {
   Chip,
   Card,
   CardContent,
-  Divider,
   LinearProgress,
   Table,
   TableBody,
@@ -23,12 +22,10 @@ import {
   TableRow,
   Tabs,
   Tab,
-  Tooltip,
 } from '@mui/material';
 import {
   Warning as WarningIcon,
   TrendingDown as TrendingDownIcon,
-  AccountBalance as AccountBalanceIcon,
   Timeline as TimelineIcon,
 } from '@mui/icons-material';
 import { stressTestAPI, etfAPI } from '../services/api';
@@ -142,7 +139,6 @@ const StressTest: React.FC = () => {
   };
 
   // 格式化百分比
-  const formatPercent = (value: number) => `${value?.toFixed?.(2) ?? 0}%`;
 
   return (
     <Box sx={{ p: 3 }}>

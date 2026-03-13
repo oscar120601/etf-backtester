@@ -130,7 +130,9 @@ export const convertToTemplate = (portfolio: SavedPortfolio): PortfolioTemplate 
     id: portfolio.id,
     name: portfolio.name,
     description: portfolio.description || '',
-    holdings: portfolio.holdings,
+    category: '經典' as const,
+    tags: ['custom'],
+    holdings: portfolio.holdings.map(h => ({ ...h, name: h.symbol })),
   };
 };
 

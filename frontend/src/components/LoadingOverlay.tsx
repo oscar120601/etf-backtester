@@ -4,13 +4,16 @@ import { Box, CircularProgress, Typography, Paper } from '@mui/material';
 interface LoadingOverlayProps {
   message?: string;
   show?: boolean;
+  open?: boolean;
 }
 
 const LoadingOverlay: React.FC<LoadingOverlayProps> = ({ 
   message = '載入中...', 
-  show = true 
+  show,
+  open
 }) => {
-  if (!show) return null;
+  const isVisible = open ?? show ?? true;
+  if (!isVisible) return null;
 
   return (
     <Box

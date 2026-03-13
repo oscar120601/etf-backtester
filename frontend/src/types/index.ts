@@ -1,25 +1,5 @@
-// ETF 類型
-export interface ETF {
-  symbol: string;
-  name: string;
-  asset_class: string;
-  expense_ratio?: number;
-  description?: string;
-  aum?: number;
-  inception_date?: string;
-}
-
-// ETF 價格
-export interface ETFPrice {
-  date: string;
-  open: number;
-  high: number;
-  low: number;
-  close: number;
-  adjusted_close: number;
-  volume: number;
-  dividend?: number;
-}
+// ETF 類型 - 從 etf.ts 重新導出
+export type { ETF, ETFPrice, ETFListResponse, ETFPriceHistory } from './etf';
 
 // 回測請求
 export interface PortfolioHolding {
@@ -34,6 +14,7 @@ export interface BacktestParameters {
   rebalance_frequency: string;
   monthly_contribution?: number;
   reinvest_dividends: boolean;
+  benchmark?: string;
 }
 
 export interface BacktestRequest {
@@ -95,6 +76,7 @@ export interface BacktestResponse {
     portfolio_value: TimeSeriesPoint[];
     drawdown: TimeSeriesPoint[];
     benchmark_value?: TimeSeriesPoint[];
+    annual_returns?: Array<{ year: number; return: number }>;
   };
   benchmark_comparison?: BenchmarkComparison;
   generated_at: string;

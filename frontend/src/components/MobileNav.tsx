@@ -1,6 +1,5 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import {
-  Box,
   Drawer,
   List,
   ListItem,
@@ -23,7 +22,7 @@ import {
   CompareArrows as CompareArrowsIcon,
   Save as SaveIcon,
 } from '@mui/icons-material';
-import { useNavigate, useLocation } from 'react-router-dom';
+
 
 interface NavItem {
   id: string;

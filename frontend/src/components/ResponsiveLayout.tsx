@@ -130,8 +130,6 @@ export function ResponsiveText({
   children: ReactNode;
   variant?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'body1' | 'body2';
 }) {
-  const theme = useTheme();
-  
   const fontSizes = {
     h1: { xs: '2rem', sm: '2.5rem', md: '3rem' },
     h2: { xs: '1.75rem', sm: '2rem', md: '2.5rem' },
@@ -145,7 +143,7 @@ export function ResponsiveText({
 
   return (
     <Box
-      component={variant.startsWith('h') ? variant : 'span'}
+      component={(variant.startsWith('h') ? variant : 'span') as 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'span'}
       sx={{
         fontSize: fontSizes[variant],
         fontWeight: variant.startsWith('h') ? 600 : 400,

@@ -38,8 +38,6 @@ import type {
   ETF,
   OptimizationResponse,
   OptimizedPortfolio,
-  EfficientFrontierPoint,
-  IndividualAsset,
 } from '../types';
 import EfficientFrontierChart from '../components/EfficientFrontierChart';
 import LoadingOverlay from '../components/LoadingOverlay';

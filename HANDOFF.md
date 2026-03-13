@@ -2,6 +2,37 @@
 
 ## 📅 會話記錄
 
+### 2026-03-13 開發會話（TypeScript 修復 + GitHub 發布）
+
+#### 已完成工作
+
+- [x] **TypeScript 類型修復**
+  - 修復 46 個 TypeScript 編譯錯誤
+  - 統一 ETF 類型定義（從 `types/etf.ts` 導出）
+  - 添加缺失的 `BacktestParameters.benchmark` 屬性
+  - 添加缺失的 `time_series.annual_returns` 屬性
+  - 修復 Chart.js scales callback 類型不匹配
+  - 修復 LoadingOverlayProps 缺少 'open' 屬性
+  - 修復 portfolioStorage.ts convertToTemplate 返回值
+  - 移除所有未使用的導入和變數
+
+- [x] **GitHub 發布 v1.0**
+  - 創建 GitHub 倉庫: https://github.com/oscar120601/etf-backtester
+  - 推送完整代碼（41 個文件，8,293 行新增）
+  - 驗證構建成功
+
+#### 修復詳情
+
+| 錯誤類型 | 數量 | 說明 |
+|---------|------|------|
+| TS6133 | 15+ | 未使用的變數/導入 |
+| TS2339 | 10+ | 缺少屬性定義 |
+| TS2322 | 8+ | Chart.js 類型不匹配 |
+| TS6192 | 5+ | 未使用的導入聲明 |
+| 其他 | 8+ | 類型相容性問題 |
+
+---
+
 ### 2026-03-13 開發會話（Week 3 完成 - Phase 2 ETF 擴充 + 進階功能）
 
 #### 已完成工作

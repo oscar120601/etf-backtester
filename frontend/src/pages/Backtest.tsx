@@ -11,7 +11,6 @@ import {
   TextField,
   Typography,
   Grid,
-  Slider,
   Alert,
   CircularProgress,
   Divider,
@@ -55,7 +54,6 @@ ChartJS.register(
 
 // 引入 chart 配置（註冊 zoom 插件）
 import '../utils/chartConfig';
-import { convertToTemplate } from '../utils/portfolioStorage';
 
 interface PortfolioHolding {
   symbol: string;
@@ -213,7 +211,7 @@ const Backtest: React.FC = () => {
       y: {
         beginAtZero: false,
         ticks: {
-          callback: (value: number) => `$${value.toLocaleString()}`,
+          callback: (value: string | number) => `$${Number(value).toLocaleString()}`,
         },
       },
     },

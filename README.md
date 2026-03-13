@@ -1,6 +1,14 @@
 # ETF Backtester
 
+[![GitHub](https://img.shields.io/badge/GitHub-etf--backtester-blue?logo=github)](https://github.com/oscar120601/etf-backtester)
+[![Version](https://img.shields.io/badge/version-v1.0.0-green)](./CHANGELOG.md)
+[![TypeScript](https://img.shields.io/badge/TypeScript-Strict-blue?logo=typescript)](https://www.typescriptlang.org/)
+[![React](https://img.shields.io/badge/React-18-blue?logo=react)](https://react.dev/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-Python-green?logo=fastapi)](https://fastapi.tiangolo.com/)
+
 一個專業級的 ETF 投資組合回測與分析工具，使用 FastAPI + React + TypeScript 開發。
+
+**🚀 在線演示**: 部署至 Railway + Vercel（參見 [DEPLOY.md](./DEPLOY.md)）
 
 ## 功能特色
 
@@ -285,9 +293,23 @@ vercel
 
 詳細部署指南參見 [DEPLOY.md](DEPLOY.md)
 
+## 相關文件
+
+| 文件 | 說明 |
+|------|------|
+| [CHANGELOG.md](./CHANGELOG.md) | 版本更新日誌 |
+| [ROADMAP-v1.1.md](./ROADMAP-v1.1.md) | v1.1 開發計畫 |
+| [HANDOFF.md](./HANDOFF.md) | 開發交接記錄 |
+| [AGENTS.md](./AGENTS.md) | 開發指南 |
+| [DEPLOY.md](./DEPLOY.md) | 部署指南 |
+
 ## 貢獻指南
 
 歡迎提交 Issue 和 Pull Request！
+
+- 🐛 [回報 Bug](https://github.com/oscar120601/etf-backtester/issues)
+- 💡 [提出建議](https://github.com/oscar120601/etf-backtester/issues)
+- 🔧 [提交 PR](https://github.com/oscar120601/etf-backtester/pulls)
 
 ## 授權
 

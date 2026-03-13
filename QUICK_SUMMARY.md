@@ -104,4 +104,11 @@ npm run dev
 
 ---
 
+## 🔗 相關連結
+
+- **GitHub**: https://github.com/oscar120601/etf-backtester
+- **問題回報**: 請在 GitHub 提交 Issue
+
+---
+
 **有任何問題或建議，請提交 Issue！**

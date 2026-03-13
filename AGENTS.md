@@ -200,7 +200,7 @@ cd frontend && npm run dev
 
 ## 📊 最新狀態
 
-### v1.0 已完成
+### v1.0 已完成 (2026-03-13)
 - ✅ 22 檔 ETF 資料
 - ✅ 完整回測引擎
 - ✅ Monte Carlo 模擬
@@ -213,6 +213,15 @@ cd frontend && npm run dev
 - ✅ 報告匯出（PDF/CSV/Excel）
 - ✅ 投資組合存檔
 - ✅ 互動圖表（zoom/pan/download）
+- ✅ 回撤分析
+- ✅ 預設模板（6 種）
+- ✅ TypeScript 嚴格模式
+- ✅ GitHub 發布
 
 ### 開發中
 - 🚀 v1.1: Phase 3 ETF 擴充（全球市場 + 債券）
+
+### 程式碼品質
+- **TypeScript**: 嚴格模式，零編譯錯誤
+- **Python**: Type hints + docstrings
+- **測試**: 構建驗證通過
