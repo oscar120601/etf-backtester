@@ -18,7 +18,6 @@ import {
 import {
   Menu as MenuIcon,
   TrendingUp as TrendingUpIcon,
-  Assessment as AssessmentIcon,
   Casino as CasinoIcon,
   CompareArrows as CompareArrowsIcon,
   Save as SaveIcon,
@@ -27,7 +26,6 @@ import {
   Warning as WarningIcon,
   Storage as StorageIcon,
 } from '@mui/icons-material'
-import ETFList from './pages/ETFList'
 import Backtest from './pages/Backtest'
 import MonteCarlo from './pages/MonteCarlo'
 import Comparison from './pages/Comparison'
@@ -51,11 +49,11 @@ const theme = createTheme({
 
 const DRAWER_WIDTH = 240;
 
-type PageType = 'etfs' | 'backtest' | 'montecarlo' | 'comparison' | 'saved' | 'optimizer' | 'analysis' | 'stresstest' | 'datamgmt';
+type PageType = 'backtest' | 'montecarlo' | 'comparison' | 'saved' | 'optimizer' | 'analysis' | 'stresstest' | 'datamgmt';
 
 function App() {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [currentPage, setCurrentPage] = useState<PageType>('etfs');
+  const [currentPage, setCurrentPage] = useState<PageType>('backtest');
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -63,7 +61,7 @@ function App() {
 
   const getPageTitle = () => {
     switch (currentPage) {
-      case 'etfs': return 'ETF 列表';
+
       case 'backtest': return '投資組合回測';
       case 'montecarlo': return '蒙地卡羅模擬';
       case 'comparison': return '投資組合比較';
@@ -84,20 +82,6 @@ function App() {
         </Typography>
       </Toolbar>
       <List>
-        <ListItem disablePadding>
-          <ListItemButton 
-            selected={currentPage === 'etfs'}
-            onClick={() => {
-              setCurrentPage('etfs');
-              setMobileOpen(false);
-            }}
-          >
-            <ListItemIcon>
-              <AssessmentIcon />
-            </ListItemIcon>
-            <ListItemText primary="ETF 列表" />
-          </ListItemButton>
-        </ListItem>
         <ListItem disablePadding>
           <ListItemButton 
             selected={currentPage === 'backtest'}
@@ -290,7 +274,6 @@ function App() {
           }}
         >
           <Toolbar sx={{ display: { xs: 'none', sm: 'block' } }} />
-          {currentPage === 'etfs' && <ETFList />}
           {currentPage === 'backtest' && <Backtest />}
           {currentPage === 'montecarlo' && <MonteCarlo />}
           {currentPage === 'comparison' && <Comparison />}
