@@ -36,6 +36,10 @@ async def run_backtest(
     
     根據提供的投資組合配置和回測參數，執行歷史回測並返回績效指標。
     """
+    from datetime import date
+    from app.models.etf import ETFPrice
+    from sqlalchemy import func
+    
     start_time = time.time()
     
     try:
@@ -46,6 +50,33 @@ async def run_backtest(
                 status_code=400,
                 detail=f"權重總和必須為 1.0，目前為 {total_weight:.4f}"
             )
+        
+        # 檢查所有 ETF 的數據可用範圍
+        symbols = [h.symbol for h in request.portfolio]
+        
+        # 獲取每個 ETF 的最早數據日期
+        symbol_date_ranges = {}
+        for symbol in symbols:
+            earliest = db.query(func.min(ETFPrice.date)).filter(
+                ETFPrice.symbol == symbol
+            ).scalar()
+            if earliest:
+                symbol_date_ranges[symbol] = earliest
+        
+        # 找出最晚的開始日期（確保所有 ETF 都有數據）
+        if symbol_date_ranges:
+            latest_start = max(symbol_date_ranges.values())
+            request_start = request.parameters.start_date
+            
+            # 如果有 ETF 在請求的開始日期後才開始交易，調整開始日期
+            if isinstance(request_start, str):
+                request_start = date.fromisoformat(request_start)
+            
+            if latest_start > request_start:
+                # 調整開始日期並記錄警告
+                adjusted_start = latest_start
+                print(f"警告：調整回測開始日期從 {request_start} 到 {adjusted_start}，因為部分 ETF 在此日期前無數據")
+                request.parameters.start_date = adjusted_start
         
         # 建立回測引擎
         engine = BacktestEngine(db)

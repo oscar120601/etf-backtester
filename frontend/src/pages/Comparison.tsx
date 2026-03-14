@@ -46,6 +46,7 @@ import ETFSelector from '../components/ETFSelector';
 import LoadingOverlay from '../components/LoadingOverlay';
 import { ETF } from '../types/etf';
 import type { SavedBacktest } from '../types';
+import { getChartOptionsWithZoom } from '../utils/chartConfig';
 
 ChartJS.register(
   CategoryScale,
@@ -218,7 +219,7 @@ export default function Comparison() {
     return { labels, datasets };
   };
 
-  const chartOptions = {
+  const chartOptions = getChartOptionsWithZoom({
     responsive: true,
     plugins: {
       legend: {
@@ -237,7 +238,7 @@ export default function Comparison() {
         },
       },
     },
-  };
+  });
 
   return (
     <Box>

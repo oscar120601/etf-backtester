@@ -54,6 +54,7 @@ ChartJS.register(
 
 // 引入 chart 配置（註冊 zoom 插件）
 import '../utils/chartConfig';
+import { getChartOptionsWithZoom } from '../utils/chartConfig';
 
 interface PortfolioHolding {
   symbol: string;
@@ -196,7 +197,7 @@ const Backtest: React.FC = () => {
       }
     : null;
 
-  const chartOptions = {
+  const chartOptions = getChartOptionsWithZoom({
     responsive: true,
     plugins: {
       legend: {
@@ -215,7 +216,7 @@ const Backtest: React.FC = () => {
         },
       },
     },
-  };
+  });
 
   return (
     <Box sx={{ maxWidth: 1200, mx: 'auto', p: 3 }}>

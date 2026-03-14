@@ -111,7 +111,7 @@ class BacktestEngine:
         
         # 獲取歷史價格資料
         symbols = [h["symbol"] for h in holdings_config]
-        prices_df = self._fetch_historical_prices(symbols, start_date, end_date)
+        prices_df, symbol_start_dates = self._fetch_historical_prices(symbols, start_date, end_date)
         
         if prices_df.empty:
             raise ValueError("無法獲取價格資料，請確認日期範圍和 ETF 代碼是否正確")
@@ -121,23 +121,45 @@ class BacktestEngine:
         portfolio_value = initial_amount
         cash = Decimal("0")
         
-        # 初始化持倉
+        # 初始化持倉（考慮不同 ETF 的開始日期）
         holdings = {}
+        active_symbols = set()  # 已經開始交易的 ETF
+        
         for config in holdings_config:
             symbol = config["symbol"]
             weight = Decimal(str(config["weight"]))
-            initial_investment = portfolio_value * weight
             
-            # 取得第一天的價格
-            first_price = prices_df[symbol].iloc[0]
-            shares = initial_investment / Decimal(str(first_price))
-            
-            holdings[symbol] = PortfolioHolding(
-                symbol=symbol,
-                weight=weight,
-                shares=shares,
-                value=initial_investment
-            )
+            # 檢查該 ETF 是否在回測開始日期已經有數據
+            if symbol in symbol_start_dates and symbol_start_dates[symbol] <= start_date:
+                # ETF 在回測開始時已有數據，正常初始化
+                initial_investment = portfolio_value * weight
+                first_price = prices_df[symbol].iloc[0]
+                shares = initial_investment / Decimal(str(first_price))
+                
+                holdings[symbol] = PortfolioHolding(
+                    symbol=symbol,
+                    weight=weight,
+                    shares=shares,
+                    value=initial_investment
+                )
+                active_symbols.add(symbol)
+            else:
+                # ETF 尚未開始交易，初始持有 0 股
+                holdings[symbol] = PortfolioHolding(
+                    symbol=symbol,
+                    weight=weight,
+                    shares=Decimal("0"),
+                    value=Decimal("0")
+                )
+        
+        # 如果有些 ETF 尚未開始交易，將其權重分配給已活躍的 ETF
+        if active_symbols:
+            active_weight = sum(holdings[s].weight for s in active_symbols)
+            if active_weight > 0 and active_weight < 1:
+                # 重新調整活躍 ETF 的權重
+                scale_factor = Decimal("1") / active_weight
+                for symbol in active_symbols:
+                    holdings[symbol].weight *= scale_factor
         
         # 逐日回測
         for current_date in pd.date_range(start=start_date, end=end_date, freq='D'):
@@ -152,8 +174,23 @@ class BacktestEngine:
             # 計算當日組合價值
             portfolio_value = Decimal("0")
             total_dividend = Decimal("0")
+            newly_active = []  # 今天新開始交易的 ETF
             
             for symbol, holding in holdings.items():
+                # 檢查該 ETF 是否今天開始交易
+                if symbol not in active_symbols:
+                    if symbol in symbol_start_dates and current_date >= symbol_start_dates[symbol]:
+                        if symbol in daily_prices and pd.notna(daily_prices[symbol]):
+                            newly_active.append(symbol)
+                            active_symbols.add(symbol)
+                            # 初始化該 ETF 的持倉
+                            target_value = portfolio_value * holding.weight
+                            price = Decimal(str(daily_prices[symbol]))
+                            holding.shares = target_value / price
+                            holding.value = target_value
+                    continue
+                
+                # 已活躍的 ETF，正常計算價值
                 if symbol in daily_prices and pd.notna(daily_prices[symbol]):
                     price = Decimal(str(daily_prices[symbol]))
                     holding.value = holding.shares * price
@@ -173,6 +210,16 @@ class BacktestEngine:
                             # 配息入現金
                             cash += dividend_amount
             
+            # 處理新開始交易的 ETF（從現金或其他持倉重新分配）
+            if newly_active and portfolio_value > 0:
+                # 簡化處理：從現金中分配
+                for symbol in newly_active:
+                    target_value = portfolio_value * holdings[symbol].weight
+                    price = Decimal(str(daily_prices[symbol]))
+                    shares = target_value / price
+                    holdings[symbol].shares = shares
+                    holdings[symbol].value = target_value
+            
             portfolio_value += cash
             
             # 處理定期定額（每月第一天）
@@ -180,21 +227,32 @@ class BacktestEngine:
                 cash += monthly_contribution
                 portfolio_value += monthly_contribution
             
-            # 檢查是否需要再平衡
+            # 檢查是否需要再平衡（只對已活躍的 ETF）
             if self._should_rebalance(current_date, rebalance_frequency):
-                holdings, cash = self._rebalance(
-                    holdings, portfolio_value, daily_prices, cash
-                )
+                active_holdings = {s: h for s, h in holdings.items() if s in active_symbols}
+                if active_holdings:
+                    active_holdings, cash = self._rebalance(
+                        active_holdings, portfolio_value, daily_prices, cash
+                    )
+                    # 更新 holdings
+                    for s, h in active_holdings.items():
+                        holdings[s] = h
             
-            # 記錄結果
+            # 記錄結果（只計算已活躍的持倉價值）
+            current_portfolio_value = cash
+            for symbol in active_symbols:
+                if symbol in daily_prices and pd.notna(daily_prices[symbol]):
+                    price = Decimal(str(daily_prices[symbol]))
+                    current_portfolio_value += holdings[symbol].shares * price
+            
             results.append(BacktestResult(
                 date=current_date,
-                portfolio_value=portfolio_value,
+                portfolio_value=current_portfolio_value,
                 holdings={symbol: PortfolioHolding(
                     symbol=h.symbol,
                     weight=h.weight,
                     shares=h.shares,
-                    value=h.value
+                    value=h.value if symbol in active_symbols else Decimal("0")
                 ) for symbol, h in holdings.items()},
                 cash=cash,
                 dividend=total_dividend
@@ -207,9 +265,12 @@ class BacktestEngine:
         symbols: List[str],
         start_date: date,
         end_date: date
-    ) -> pd.DataFrame:
+    ) -> Tuple[pd.DataFrame, Dict[str, date]]:
         """
         從資料庫獲取歷史價格資料
+        
+        處理不同 ETF 起始日期不同的情況。對於某 ETF 尚未開始交易的日期，
+        會使用 NaN 標記，讓回測引擎決定如何處理。
         
         Args:
             symbols: ETF 代碼列表
@@ -217,34 +278,52 @@ class BacktestEngine:
             end_date: 結束日期
         
         Returns:
-            pd.DataFrame: 價格資料，欄位為各 ETF symbol，索引為日期
+            Tuple[pd.DataFrame, Dict[str, date]]: 
+                - 價格資料 DataFrame（包含 NaN）
+                - 各 ETF 實際開始交易日期
         """
-        # 查詢資料庫
-        prices = self.db.query(ETFPrice).filter(
-            ETFPrice.symbol.in_(symbols),
-            ETFPrice.date >= start_date,
-            ETFPrice.date <= end_date
-        ).all()
+        # 為每個 ETF 單獨獲取數據
+        all_data = {}
+        symbol_start_dates = {}
         
-        if not prices:
-            # 如果沒有資料，返回空的 DataFrame
-            # 實際使用時應該從外部 API 獲取
-            return pd.DataFrame()
+        for symbol in symbols:
+            prices = self.db.query(ETFPrice).filter(
+                ETFPrice.symbol == symbol,
+                ETFPrice.date >= start_date,
+                ETFPrice.date <= end_date
+            ).order_by(ETFPrice.date).all()
+            
+            if prices:
+                # 創建該 ETF 的價格序列
+                symbol_data = {p.date: float(p.adjusted_close) for p in prices}
+                all_data[symbol] = symbol_data
+                # 記錄該 ETF 的實際開始日期
+                symbol_start_dates[symbol] = min(symbol_data.keys())
         
-        # 轉換為 DataFrame
-        data = []
-        for price in prices:
-            data.append({
-                "date": price.date,
-                "symbol": price.symbol,
-                "price": float(price.adjusted_close)
-            })
+        if not all_data:
+            return pd.DataFrame(), {}
         
-        df = pd.DataFrame(data)
-        df = df.pivot(index="date", columns="symbol", values="price")
+        # 獲取所有可用的交易日（所有 ETF 的聯集）
+        all_dates = set()
+        for symbol_data in all_data.values():
+            all_dates.update(symbol_data.keys())
+        all_dates = sorted(all_dates)
+        
+        # 創建 DataFrame，缺失值保持為 NaN
+        df_data = {}
+        for symbol in symbols:
+            if symbol in all_data:
+                # 只使用實際有數據的日期
+                symbol_series = [all_data[symbol].get(d, float('nan')) for d in all_dates]
+                df_data[symbol] = symbol_series
+            else:
+                # 該 ETF 完全沒有數據，填充 NaN
+                df_data[symbol] = [float('nan')] * len(all_dates)
+        
+        df = pd.DataFrame(df_data, index=all_dates)
         df = df.sort_index()
         
-        return df
+        return df, symbol_start_dates
     
     def _get_dividend(self, symbol: str, date: date) -> Decimal:
         """
