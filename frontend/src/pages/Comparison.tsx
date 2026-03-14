@@ -18,12 +18,17 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  FormControl,
+  Select,
+  MenuItem,
+  Tooltip,
 } from '@mui/material';
 import {
   Add as AddIcon,
   Delete as DeleteIcon,
   CompareArrows as CompareIcon,
   EmojiEvents as TrophyIcon,
+  FolderOpen as FolderOpenIcon,
 } from '@mui/icons-material';
 import { Line } from 'react-chartjs-2';
 import {
@@ -36,10 +41,11 @@ import {
   Tooltip as ChartTooltip,
   Legend,
 } from 'chart.js';
-import { etfAPI, backtestAPI } from '../services/api';
+import { etfAPI, backtestAPI, savedBacktestAPI } from '../services/api';
 import ETFSelector from '../components/ETFSelector';
 import LoadingOverlay from '../components/LoadingOverlay';
 import { ETF } from '../types/etf';
+import type { SavedBacktest } from '../types';
 
 ChartJS.register(
   CategoryScale,
@@ -90,6 +96,7 @@ const COLORS = ['#1976d2', '#388e3c', '#d32f2f'];
 
 export default function Comparison() {
   const [etfs, setEtfs] = useState<ETF[]>([]);
+  const [savedPortfolios, setSavedPortfolios] = useState<SavedBacktest[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ComparisonResult | null>(null);
@@ -109,15 +116,31 @@ export default function Comparison() {
   });
 
   useEffect(() => {
-    loadETFs();
+    loadData();
   }, []);
 
-  const loadETFs = async () => {
+  const loadData = async () => {
     try {
-      const etfs = await etfAPI.getAll();
-      setEtfs(etfs);
+      const [etfsData, savedData] = await Promise.all([
+        etfAPI.getAll(),
+        savedBacktestAPI.getAll(),
+      ]);
+      setEtfs(etfsData);
+      setSavedPortfolios(savedData.items || []);
     } catch (err) {
-      setError('載入 ETF 列表失敗');
+      setError('載入資料失敗');
+    }
+  };
+
+  const loadSavedPortfolio = (portfolioId: string, savedId: number) => {
+    const saved = savedPortfolios.find(p => p.id === savedId);
+    const portfolioData = saved?.portfolio;
+    if (portfolioData && portfolioData.length > 0) {
+      setPortfolios(portfolios.map(p => 
+        p.id === portfolioId 
+          ? { ...p, name: saved.name, holdings: portfolioData.map(h => ({ symbol: h.symbol, weight: h.weight })) }
+          : p
+      ));
     }
   };
 
@@ -256,13 +279,52 @@ export default function Comparison() {
                       size="small"
                       sx={{ flexGrow: 1, mr: 1 }}
                     />
-                    <IconButton
-                      size="small"
-                      onClick={() => removePortfolio(portfolio.id)}
-                      disabled={portfolios.length <= 2}
-                    >
-                      <DeleteIcon />
-                    </IconButton>
+                    <Box sx={{ display: 'flex', gap: 0.5 }}>
+                      {savedPortfolios.length > 0 && (
+                        <Tooltip title="載入已儲存組合">
+                          <FormControl size="small" sx={{ minWidth: 40 }}>
+                            <Select
+                              value=""
+                              onChange={(e) => {
+                                const savedId = Number(e.target.value);
+                                if (savedId) loadSavedPortfolio(portfolio.id, savedId);
+                              }}
+                              displayEmpty
+                              renderValue={() => <FolderOpenIcon fontSize="small" />}
+                              sx={{ 
+                                '& .MuiSelect-select': { 
+                                  py: 0.5, 
+                                  px: 1,
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                } 
+                              }}
+                            >
+                              <MenuItem disabled value="">
+                                選擇已儲存的組合
+                              </MenuItem>
+                              {savedPortfolios.map((saved) => (
+                                <MenuItem key={saved.id} value={saved.id}>
+                                  <Box>
+                                    <Typography variant="body2">{saved.name}</Typography>
+                                    <Typography variant="caption" color="text.secondary">
+                                      {saved.portfolio?.length || 0} 檔 ETF
+                                    </Typography>
+                                  </Box>
+                                </MenuItem>
+                              ))}
+                            </Select>
+                          </FormControl>
+                        </Tooltip>
+                      )}
+                      <IconButton
+                        size="small"
+                        onClick={() => removePortfolio(portfolio.id)}
+                        disabled={portfolios.length <= 2}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </Box>
                   </Box>
                   
                   <ETFSelector
