@@ -358,9 +358,12 @@ class StressTestEngine:
         """
         post_crisis = portfolio_values[portfolio_values.index > crisis_end]
         
-        for i, value in enumerate(post_crisis):
+        # 尋找第一個大於或等於危機前價值的日期
+        for date_idx, value in post_crisis.items():
             if value >= pre_crisis_value:
-                return i
+                # 計算從危機結束日到恢復日的天數
+                delta = date_idx - crisis_end
+                return delta.days
         
         return None  # 尚未恢復
     

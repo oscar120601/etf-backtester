@@ -213,6 +213,7 @@ async def run_monte_carlo(
             monthly_contribution=Decimal(str(request.monthly_contribution)),
             simulations=request.simulations,
             confidence_levels=request.confidence_levels,
+            target_amount=Decimal(str(request.target_amount)) if request.target_amount else None
         )
         
         return MonteCarloResponse(

@@ -28,8 +28,10 @@ import {
   Timeline as TimelineIcon,
 } from '@mui/icons-material';
 import { stressTestAPI } from '../services/api';
+import { Line } from 'react-chartjs-2';
 import LoadingOverlay from '../components/LoadingOverlay';
 import PortfolioSelector from '../components/PortfolioSelector';
+import { getChartOptionsWithZoom } from '../utils/chartConfig';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -270,6 +272,56 @@ const StressTest: React.FC = () => {
   );
 };
 
+const PerformanceChart: React.FC<{ dailyReturns: any[] }> = ({ dailyReturns }) => {
+  const chartData = {
+    labels: dailyReturns.map(d => d.date),
+    datasets: [
+      {
+        label: '投資組合',
+        data: dailyReturns.map(d => d.portfolio_return),
+        borderColor: 'rgb(33, 150, 243)',
+        backgroundColor: 'rgba(33, 150, 243, 0.1)',
+        tension: 0.1,
+        fill: true,
+        pointRadius: 0,
+      },
+      {
+        label: '基準 (SPY)',
+        data: dailyReturns.map(d => d.benchmark_return),
+        borderColor: 'rgb(158, 158, 158)',
+        backgroundColor: 'transparent',
+        borderDash: [5, 5],
+        tension: 0.1,
+        pointRadius: 0,
+      }
+    ]
+  };
+
+  const options = getChartOptionsWithZoom({
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'top' as const,
+      },
+      tooltip: {
+        callbacks: {
+          label: (context: any) => `${context.dataset.label}: ${context.parsed.y}%`,
+        },
+      },
+    },
+    scales: {
+      y: {
+        ticks: {
+          callback: (value: any) => `${value}%`,
+        },
+      },
+    },
+  });
+
+  return <Line data={chartData} options={options} />;
+};
+
 // 單一測試結果組件
 const SingleTestResult: React.FC<{ result: any }> = ({ result }) => {
   const isPositive = result.portfolio_return >= 0;
@@ -312,7 +364,7 @@ const SingleTestResult: React.FC<{ result: any }> = ({ result }) => {
           <Card>
             <CardContent>
               <Typography variant="caption" color="text.secondary">
-                基準 ({result.scenario.benchmark}) 報酬
+                基準 ({result.scenario.benchmark_symbol}) 報酬
               </Typography>
               <Typography
                 variant="h4"
@@ -335,12 +387,24 @@ const SingleTestResult: React.FC<{ result: any }> = ({ result }) => {
                 sx={{ color: outperformed ? 'success.main' : 'error.main' }}
               >
                 {outperformed ? '+' : ''}
-                {result.excess_return}%
+                {result.excess_return.toFixed(2)}%
               </Typography>
             </CardContent>
           </Card>
         </Grid>
       </Grid>
+
+      {/* 績效走勢圖 */}
+      <Card sx={{ mb: 3 }}>
+        <CardContent>
+          <Typography variant="h6" gutterBottom>
+            績效走勢 (累積報酬 %)
+          </Typography>
+          <Box sx={{ height: 350 }}>
+            <PerformanceChart dailyReturns={result.daily_returns} />
+          </Box>
+        </CardContent>
+      </Card>
 
       <Paper sx={{ p: 3 }}>
         <Typography variant="h6" gutterBottom>

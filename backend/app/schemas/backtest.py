@@ -131,6 +131,7 @@ class MonteCarloRequest(BaseModel):
         default=[0.5, 0.75, 0.9, 0.95],
         description="信心水準"
     )
+    target_amount: Optional[float] = Field(default=None, description="目標金額")
 
 
 class MonteCarloResponse(BaseModel):

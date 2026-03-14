@@ -91,6 +91,7 @@ export interface MonteCarloRequest {
   monthly_contribution: number;
   simulations: number;
   confidence_levels: number[];
+  target_amount?: number;
 }
 
 export interface MonteCarloResponse {

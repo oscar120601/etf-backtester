@@ -430,7 +430,8 @@ class BacktestEngine:
         initial_amount: Decimal,
         monthly_contribution: Decimal,
         simulations: int,
-        confidence_levels: List[float] = None
+        confidence_levels: List[float] = None,
+        target_amount: Optional[Decimal] = None
     ) -> Dict:
         """
         執行蒙地卡羅模擬
@@ -442,6 +443,7 @@ class BacktestEngine:
             monthly_contribution: 每月定期投入金額
             simulations: 模擬次數
             confidence_levels: 信心水準列表
+            target_amount: 目標金額（用於計算成功率）
         
         Returns:
             Dict: 模擬結果，包含 percentiles, paths, success_probability
@@ -540,9 +542,10 @@ class BacktestEngine:
             })
         
         # 計算成功率（達成目標金額的機率）
-        target_value = float(initial_amount) * 2  # 預設目標是翻倍
+        # 如果沒有提供目標金額，預設是初始金額的兩倍
+        final_target = float(target_amount) if target_amount is not None else float(initial_amount) * 2
         final_values = yearly_values[years]
-        success_rate = (np.array(final_values) >= target_value).mean() if final_values else 0.0
+        success_rate = (np.array(final_values) >= final_target).mean() if final_values else 0.0
         
         return {
             'simulations': simulations,
@@ -550,8 +553,8 @@ class BacktestEngine:
             'percentiles': percentiles,
             'paths': paths,
             'success_probability': {
-                'doubling': float(success_rate),
-                'target_amount': target_value
+                str(int(final_target)): float(success_rate),
+                'target_amount': final_target
             }
         }
 
