@@ -181,6 +181,12 @@ class MetricsCalculator:
         if len(values) < 2:
             return 0.0, 0
         
+        # 檢查是否有 NaN 值
+        if values.isna().any():
+            values = values.dropna()
+            if len(values) < 2:
+                return 0.0, 0
+        
         # 計算歷史最高價值
         peak = values.expanding().max()
         
@@ -190,12 +196,30 @@ class MetricsCalculator:
         # 最大回撤
         max_dd = drawdown.min()
         
+        # 檢查 max_dd 是否為 NaN
+        if pd.isna(max_dd):
+            return 0.0, 0
+        
         # 計算回撤持續天數
         max_dd_idx = drawdown.idxmin()
-        peak_before_dd = values[:max_dd_idx].idxmax()
-        duration = (max_dd_idx - peak_before_dd).days
         
-        return max_dd, duration
+        # 檢查索引有效性
+        if pd.isna(max_dd_idx) or max_dd_idx == values.index[0]:
+            return max_dd, 0
+        
+        # 找到回撤前的高點
+        try:
+            peak_before_dd = values.loc[:max_dd_idx].idxmax()
+            if pd.isna(peak_before_dd):
+                return max_dd, 0
+            duration = (max_dd_idx - peak_before_dd).days
+            # 確保 duration 不是 NaN 或負數
+            if pd.isna(duration) or duration < 0:
+                duration = 0
+        except (ValueError, KeyError):
+            duration = 0
+        
+        return float(max_dd), int(duration)
     
     @classmethod
     def _calculate_sharpe_ratio(cls, daily_returns: pd.Series) -> float:
