@@ -25,6 +25,7 @@ import {
   AutoGraph as AutoGraphIcon,
   BarChart as BarChartIcon,
   Warning as WarningIcon,
+  Storage as StorageIcon,
 } from '@mui/icons-material'
 import ETFList from './pages/ETFList'
 import Backtest from './pages/Backtest'
@@ -34,6 +35,7 @@ import SavedBacktests from './pages/SavedBacktests'
 import Optimizer from './pages/Optimizer'
 import Analysis from './pages/Analysis'
 import StressTest from './pages/StressTest'
+import DataManagement from './pages/DataManagement'
 
 const theme = createTheme({
   palette: {
@@ -49,7 +51,7 @@ const theme = createTheme({
 
 const DRAWER_WIDTH = 240;
 
-type PageType = 'etfs' | 'backtest' | 'montecarlo' | 'comparison' | 'saved' | 'optimizer' | 'analysis' | 'stresstest';
+type PageType = 'etfs' | 'backtest' | 'montecarlo' | 'comparison' | 'saved' | 'optimizer' | 'analysis' | 'stresstest' | 'datamgmt';
 
 function App() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -69,6 +71,7 @@ function App() {
       case 'optimizer': return '投資組合優化器';
       case 'analysis': return '投資分析工具';
       case 'stresstest': return '壓力測試';
+      case 'datamgmt': return '資料管理';
       default: return 'ETF Backtester';
     }
   };
@@ -193,6 +196,20 @@ function App() {
             <ListItemText primary="壓力測試" />
           </ListItemButton>
         </ListItem>
+        <ListItem disablePadding>
+          <ListItemButton 
+            selected={currentPage === 'datamgmt'}
+            onClick={() => {
+              setCurrentPage('datamgmt');
+              setMobileOpen(false);
+            }}
+          >
+            <ListItemIcon>
+              <StorageIcon />
+            </ListItemIcon>
+            <ListItemText primary="資料管理" />
+          </ListItemButton>
+        </ListItem>
       </List>
     </div>
   );
@@ -281,6 +298,7 @@ function App() {
           {currentPage === 'optimizer' && <Optimizer />}
           {currentPage === 'analysis' && <Analysis />}
           {currentPage === 'stresstest' && <StressTest />}
+          {currentPage === 'datamgmt' && <DataManagement />}
         </Box>
       </Box>
     </ThemeProvider>

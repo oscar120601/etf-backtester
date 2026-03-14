@@ -47,6 +47,11 @@ def import_yahoo_data(symbols: List[str], db: Session) -> dict:
                 yahoo_symbol = symbol
                 if etf.exchange == "LSE":
                     yahoo_symbol = f"{symbol}.L"
+                # 手動對應部分因為階段一資料庫 exchange 為 Null 的英股/國際股 ETF
+                elif symbol in ["VUAA", "CNDX", "EQQQ", "IUMO"]:
+                    yahoo_symbol = f"{symbol}.L"
+                elif symbol == "AVWS":
+                    yahoo_symbol = "AVDV" # AVWS is AVDV in yahoo
                 
                 # 獲取資料庫中最新日期
                 latest_price = (
@@ -56,21 +61,26 @@ def import_yahoo_data(symbols: List[str], db: Session) -> dict:
                     .first()
                 )
                 
+                period_str = None
                 if latest_price:
                     start_date = latest_price.date + timedelta(days=1)
+                    end_date = datetime.now().date()
+                    # 如果已是最新，跳過
+                    if start_date >= end_date:
+                        results["success"].append(f"{symbol}: Already up to date")
+                        continue
                 else:
-                    start_date = datetime(2010, 1, 1).date()
-                
-                end_date = datetime.now().date()
-                
-                # 如果已是最新，跳過
-                if start_date >= end_date:
-                    results["success"].append(f"{symbol}: Already up to date")
-                    continue
+                    # 如果沒有資料，則獲取最大歷史資料
+                    start_date = None
+                    end_date = None
+                    period_str = "max"
                 
                 # 從 Yahoo Finance 下載
                 ticker = yf.Ticker(yahoo_symbol)
-                df = ticker.history(start=start_date, end=end_date)
+                if period_str == "max":
+                    df = ticker.history(period="max", auto_adjust=False)
+                else:
+                    df = ticker.history(start=start_date, end=end_date, auto_adjust=False)
                 
                 if df.empty:
                     results["failed"].append(f"{symbol}: No data available from Yahoo Finance")
@@ -79,6 +89,10 @@ def import_yahoo_data(symbols: List[str], db: Session) -> dict:
                 # 插入資料庫
                 inserted_count = 0
                 for index, row in df.iterrows():
+                    # Skip if missing closing price (e.g. days with only dividend info but no trading data)
+                    if pd.isna(row['Close']):
+                        continue
+                        
                     # 檢查是否已存在
                     existing = (
                         db.query(ETFPrice)
@@ -92,6 +106,9 @@ def import_yahoo_data(symbols: List[str], db: Session) -> dict:
                     if existing:
                         continue
                     
+                    # 使用調整後收盤價 (Adj Close)，如無則使用收盤價
+                    adj_close = row['Adj Close'] if 'Adj Close' in row and pd.notna(row['Adj Close']) else row['Close']
+                    
                     price = ETFPrice(
                         symbol=symbol,
                         date=index.date(),
@@ -99,7 +116,7 @@ def import_yahoo_data(symbols: List[str], db: Session) -> dict:
                         high_price=row['High'],
                         low_price=row['Low'],
                         close_price=row['Close'],
-                        adjusted_close=row['Close'],
+                        adjusted_close=adj_close,
                         volume=int(row['Volume']) if pd.notna(row['Volume']) else None,
                         dividend=row['Dividends'] if pd.notna(row['Dividends']) else 0,
                         data_source='yahoo',
