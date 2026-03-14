@@ -93,6 +93,13 @@ export default function PortfolioSelector({
   const handleLoadSaved = async (id: string) => {
     const saved = savedPortfolios.find(p => p.id.toString() === id);
     if (saved && saved.portfolio) {
+      // 同步更新 weightInput
+      const newWeightInput: Record<string, string> = {};
+      saved.portfolio.forEach(p => {
+        newWeightInput[p.symbol] = Math.round(p.weight * 100).toString();
+      });
+      setWeightInput(newWeightInput);
+      
       onPortfolioChange(saved.portfolio);
       setSelectedSavedId(id);
     }
@@ -113,6 +120,7 @@ export default function PortfolioSelector({
     const newCount = portfolio.length + 1;
     const newWeight = 1 / newCount;
 
+
     // 重新分配所有權重
     const newPortfolio = portfolio.map(p => ({
       ...p,
@@ -123,6 +131,13 @@ export default function PortfolioSelector({
       symbol: newEtfSymbol,
       weight: newWeight,
     });
+
+    // 同步更新 weightInput
+    const newWeightInput: Record<string, string> = {};
+    newPortfolio.forEach(p => {
+      newWeightInput[p.symbol] = Math.round(p.weight * 100).toString();
+    });
+    setWeightInput(newWeightInput);
 
     onPortfolioChange(newPortfolio);
     setNewEtfSymbol('');
@@ -139,6 +154,13 @@ export default function PortfolioSelector({
         p.weight = equalWeight;
       });
     }
+    
+    // 同步更新 weightInput
+    const newWeightInput: Record<string, string> = {};
+    newPortfolio.forEach(p => {
+      newWeightInput[p.symbol] = Math.round(p.weight * 100).toString();
+    });
+    setWeightInput(newWeightInput);
     
     onPortfolioChange(newPortfolio);
   };
@@ -164,6 +186,14 @@ export default function PortfolioSelector({
       ...p,
       weight: equalWeight,
     }));
+    
+    // 同步更新 weightInput
+    const newWeightInput: Record<string, string> = {};
+    newPortfolio.forEach(p => {
+      newWeightInput[p.symbol] = Math.round(p.weight * 100).toString();
+    });
+    setWeightInput(newWeightInput);
+    
     onPortfolioChange(newPortfolio);
   };
 
