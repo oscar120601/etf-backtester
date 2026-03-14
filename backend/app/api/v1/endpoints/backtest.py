@@ -73,18 +73,60 @@ async def run_backtest(
         # 計算績效指標
         metrics = MetricsCalculator.calculate_metrics(daily_values)
         
+        # 計算回撤時間序列
+        drawdown_series = MetricsCalculator.calculate_drawdown_series(daily_values)
+        
         # 準備時間序列資料
         time_series = {
             "portfolio_value": [
                 TimeSeriesPoint(date=r.date, value=float(r.portfolio_value))
                 for r in results
             ],
-            "drawdown": [],  # 暫時留空
+            "drawdown": [
+                TimeSeriesPoint(date=d, value=dd)
+                for d, dd in drawdown_series
+            ],
         }
         
-        # 如果有基準，加入基準資料
+        # 如果有基準，計算基準資料
         benchmark_comparison = None
-        benchmark_comparison = None  # 暫時禁用基準比較
+        if request.benchmark:
+            try:
+                # 執行基準回測（100% 持有基準 ETF）
+                benchmark_results = engine.run_backtest(
+                    holdings_config=[{"symbol": request.benchmark, "weight": 1.0}],
+                    start_date=request.parameters.start_date,
+                    end_date=request.parameters.end_date,
+                    initial_amount=Decimal(str(request.parameters.initial_amount)),
+                    rebalance_frequency="none",  # 基準不需要再平衡
+                    monthly_contribution=Decimal(str(request.parameters.monthly_contribution)) if request.parameters.monthly_contribution else None,
+                    reinvest_dividends=request.parameters.reinvest_dividends,
+                )
+                
+                # 計算基準績效指標
+                benchmark_daily_values = [(r.date, float(r.portfolio_value)) for r in benchmark_results]
+                benchmark_metrics = MetricsCalculator.calculate_metrics(benchmark_daily_values)
+                
+                # 加入基準時間序列
+                time_series["benchmark_value"] = [
+                    TimeSeriesPoint(date=r.date, value=float(r.portfolio_value))
+                    for r in benchmark_results
+                ]
+                
+                # 基準比較資訊
+                benchmark_comparison = {
+                    "symbol": request.benchmark,
+                    "total_return": benchmark_metrics.total_return,
+                    "cagr": benchmark_metrics.cagr,
+                    "volatility": benchmark_metrics.volatility,
+                    "max_drawdown": benchmark_metrics.max_drawdown,
+                    "sharpe_ratio": benchmark_metrics.sharpe_ratio,
+                    "outperformance": metrics.total_return - benchmark_metrics.total_return,
+                    "outperformance_cagr": metrics.cagr - benchmark_metrics.cagr,
+                }
+            except Exception as e:
+                print(f"基準計算失敗: {e}")
+                benchmark_comparison = None
         
         execution_time = int((time.time() - start_time) * 1000)
         
@@ -190,23 +232,33 @@ async def get_supported_etfs(
 
 def _metrics_to_dict(metrics: PerformanceMetrics) -> dict:
     """將績效指標轉換為字典"""
+    import numpy as np
+    
+    def convert_value(v):
+        """轉換 numpy 類型為 Python 原生類型"""
+        if isinstance(v, (np.integer, np.int64, np.int32)):
+            return int(v)
+        if isinstance(v, (np.floating, np.float64, np.float32)):
+            return float(v)
+        return v
+    
     return {
-        "total_return": metrics.total_return,
-        "cagr": metrics.cagr,
-        "volatility": metrics.volatility,
-        "max_drawdown": metrics.max_drawdown,
-        "max_drawdown_duration": metrics.max_drawdown_duration,
-        "sharpe_ratio": metrics.sharpe_ratio,
-        "sortino_ratio": metrics.sortino_ratio,
-        "calmar_ratio": metrics.calmar_ratio,
-        "best_year": metrics.best_year,
-        "worst_year": metrics.worst_year,
-        "positive_years": metrics.positive_years,
-        "negative_years": metrics.negative_years,
-        "avg_up_month": metrics.avg_up_month,
-        "avg_down_month": metrics.avg_down_month,
-        "var_95": metrics.var_95,
-        "cvar_95": metrics.cvar_95,
+        "total_return": convert_value(metrics.total_return),
+        "cagr": convert_value(metrics.cagr),
+        "volatility": convert_value(metrics.volatility),
+        "max_drawdown": convert_value(metrics.max_drawdown),
+        "max_drawdown_duration": convert_value(metrics.max_drawdown_duration),
+        "sharpe_ratio": convert_value(metrics.sharpe_ratio),
+        "sortino_ratio": convert_value(metrics.sortino_ratio),
+        "calmar_ratio": convert_value(metrics.calmar_ratio),
+        "best_year": convert_value(metrics.best_year),
+        "worst_year": convert_value(metrics.worst_year),
+        "positive_years": convert_value(metrics.positive_years),
+        "negative_years": convert_value(metrics.negative_years),
+        "avg_up_month": convert_value(metrics.avg_up_month),
+        "avg_down_month": convert_value(metrics.avg_down_month),
+        "var_95": convert_value(metrics.var_95),
+        "cvar_95": convert_value(metrics.cvar_95),
     }
 
 

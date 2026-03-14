@@ -2,6 +2,45 @@
 
 所有版本的變更記錄。
 
+## [v1.0.1] - 2026-03-14
+
+### 修復與改進
+
+#### 投資組合選擇器統一
+- **新增** `PortfolioSelector` 統一組件
+  - 支援手動 ETF 選擇與權重配置
+  - 支援從已儲存組合載入
+  - 實時權重驗證（必須 = 100%）
+  - 一鍵均分權重功能
+
+- **更新頁面使用統一組件**
+  - 蒙地卡羅模擬：支援多 ETF 組合模擬
+  - 壓力測試：統一配置介面
+  - 投資分析：滾動報酬分析使用 PortfolioSelector
+  - 投資組合優化：可從已儲存組合載入 ETF 列表
+
+#### 存檔功能統一
+- **修復** 前後端存檔不一致問題
+  - 統一使用後端數據庫作為唯一數據源
+  - 管理投資組合對話框改為使用 API
+  - 移除 localStorage 獨立存儲機制
+
+#### Bug 修復
+- **修復** API 列表不返回 portfolio 欄位問題
+  - 更新 `SavedBacktestSummary` Schema
+  - 更新 `_convert_to_summary` 函數解析 portfolio_config
+- **修復** 模板使用不存在 ETF 的問題（VOO→VUAA, BND→VXUS）
+- **修復** RebalanceFrequency 枚舉相容性（yearly/annual）
+- **修復** numpy 類型序列化問題
+- **修復** 優化器參數傳遞錯誤
+
+#### 新增檔案
+```
+frontend/src/components/PortfolioSelector.tsx  (新增)
+```
+
+---
+
 ## [v1.0.0] - 2026-03-13
 
 ### 主要功能

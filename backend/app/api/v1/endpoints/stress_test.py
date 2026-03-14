@@ -160,6 +160,7 @@ async def get_scenarios():
                 "start_date": s.start_date.isoformat(),
                 "end_date": s.end_date.isoformat(),
                 "benchmark": s.benchmark_symbol,
+                "available": s.available,
             }
             for s in scenarios
         ]

@@ -2,6 +2,65 @@
 
 ## 📅 會話記錄
 
+### 2026-03-14 開發會話（PortfolioSelector 統一組件 + 存檔功能修復）
+
+#### 已完成工作
+
+- [x] **統一投資組合選擇器**
+  - 建立 `PortfolioSelector` 組件，統一所有頁面的投資組合輸入
+  - 支援手動 ETF 選擇與權重配置（滑塊 + 數字輸入）
+  - 支援從已儲存組合載入
+  - 實時權重驗證與視覺反饋
+  - 一鍵均分權重功能
+
+- [x] **頁面更新使用統一組件**
+  - 蒙地卡羅模擬：更新為使用 PortfolioSelector，支援多 ETF
+  - 壓力測試：更新為使用 PortfolioSelector
+  - 投資分析：滾動報酬分析使用 PortfolioSelector
+  - 投資組合優化：可從已儲存組合載入 ETF 列表
+
+- [x] **存檔功能修復**
+  - 發現問題：localStorage 與後端數據庫兩套獨立存儲機制
+  - 修復：統一使用後端數據庫作為唯一數據源
+  - 更新 `SavedPortfoliosManager` 使用 `savedBacktestAPI`
+  - 更新後端 API 列表返回 portfolio 欄位
+
+- [x] **其他 Bug 修復**
+  - 修復模板使用不存在 ETF（VOO→VUAA, BND→VXUS）
+  - 修復 RebalanceFrequency 枚舉相容性
+  - 修復 numpy 類型序列化問題
+  - 修復優化器參數傳遞錯誤
+
+#### 新增/修改檔案
+
+```
+frontend/src/
+├── components/
+│   ├── PortfolioSelector.tsx           (新增)
+│   └── SavedPortfoliosManager.tsx      (重構：改為使用 API)
+├── pages/
+│   ├── MonteCarlo.tsx                  (更新：使用 PortfolioSelector)
+│   ├── StressTest.tsx                  (更新：使用 PortfolioSelector)
+│   ├── Analysis.tsx                    (更新：使用 PortfolioSelector)
+│   └── Optimizer.tsx                   (更新：支援載入已儲存組合)
+
+backend/
+├── app/schemas/saved_backtest.py       (更新：新增 portfolio 欄位)
+└── app/api/v1/endpoints/saved_backtests.py  (更新：解析 portfolio_config)
+```
+
+#### 技術債說明
+
+**已解決**：
+- 統一存儲機制，消除 localStorage 與數據庫不一致問題
+- 統一投資組合輸入組件，提升用戶體驗一致性
+
+**注意事項**：
+- 舊的 localStorage 數據需要手動清理
+- 所有投資組合現儲存於後端數據庫
+
+---
+
 ### 2026-03-13 開發會話（TypeScript 修復 + GitHub 發布）
 
 #### 已完成工作

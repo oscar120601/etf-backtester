@@ -54,6 +54,7 @@ class SavedBacktestSummary(BaseModel):
     max_drawdown: Optional[float]
     sharpe_ratio: Optional[float]
     created_at: datetime
+    portfolio: Optional[List[PortfolioHolding]] = None
     
     class Config:
         from_attributes = True

@@ -10,7 +10,6 @@ import {
   MenuItem,
   Button,
   Alert,
-  Chip,
   Card,
   CardContent,
   LinearProgress,
@@ -28,9 +27,9 @@ import {
   TrendingDown as TrendingDownIcon,
   Timeline as TimelineIcon,
 } from '@mui/icons-material';
-import { stressTestAPI, etfAPI } from '../services/api';
-import type { ETF } from '../types';
+import { stressTestAPI } from '../services/api';
 import LoadingOverlay from '../components/LoadingOverlay';
+import PortfolioSelector from '../components/PortfolioSelector';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -49,14 +48,12 @@ function TabPanel(props: TabPanelProps) {
 
 const StressTest: React.FC = () => {
   const [tabValue, setTabValue] = useState(0);
-  const [etfs, setEtfs] = useState<ETF[]>([]);
   const [scenarios, setScenarios] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // 壓力測試狀態
-  const [selectedEtfs, setSelectedEtfs] = useState<string[]>([]);
-  const [weights, setWeights] = useState<Record<string, number>>({});
+  // 投資組合狀態
+  const [portfolio, setPortfolio] = useState<{ symbol: string; weight: number }[]>([]);
   const [selectedScenario, setSelectedScenario] = useState<string>('');
   const [singleResult, setSingleResult] = useState<any>(null);
   const [allResults, setAllResults] = useState<any>(null);
@@ -65,11 +62,7 @@ const StressTest: React.FC = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [etfsData, scenariosData] = await Promise.all([
-          etfAPI.getAll(),
-          stressTestAPI.getScenarios(),
-        ]);
-        setEtfs(etfsData);
+        const scenariosData = await stressTestAPI.getScenarios();
         setScenarios(scenariosData.scenarios);
         if (scenariosData.scenarios.length > 0) {
           setSelectedScenario(scenariosData.scenarios[0].id);
@@ -85,10 +78,18 @@ const StressTest: React.FC = () => {
     setTabValue(newValue);
   };
 
+  // 檢查權重總和
+  const totalWeight = portfolio.reduce((sum, p) => sum + p.weight, 0);
+  const isWeightValid = Math.abs(totalWeight - 1.0) < 0.001;
+
   // 執行單一情境測試
   const handleSingleTest = async () => {
-    if (selectedEtfs.length < 2) {
+    if (portfolio.length < 2) {
       setError('請至少選擇 2 檔 ETF');
+      return;
+    }
+    if (!isWeightValid) {
+      setError('權重總和必須為 100%');
       return;
     }
 
@@ -96,13 +97,13 @@ const StressTest: React.FC = () => {
     setError(null);
 
     try {
-      const portfolio: Record<string, number> = {};
-      selectedEtfs.forEach(symbol => {
-        portfolio[symbol] = (weights[symbol] || 100 / selectedEtfs.length) / 100;
+      const portfolioRecord: Record<string, number> = {};
+      portfolio.forEach(p => {
+        portfolioRecord[p.symbol] = p.weight;
       });
 
       const response = await stressTestAPI.runStressTest({
-        portfolio,
+        portfolio: portfolioRecord,
         scenario_id: selectedScenario,
       });
       setSingleResult(response);
@@ -115,8 +116,12 @@ const StressTest: React.FC = () => {
 
   // 執行全部情境測試
   const handleAllTests = async () => {
-    if (selectedEtfs.length < 2) {
+    if (portfolio.length < 2) {
       setError('請至少選擇 2 檔 ETF');
+      return;
+    }
+    if (!isWeightValid) {
+      setError('權重總和必須為 100%');
       return;
     }
 
@@ -124,12 +129,12 @@ const StressTest: React.FC = () => {
     setError(null);
 
     try {
-      const portfolio: Record<string, number> = {};
-      selectedEtfs.forEach(symbol => {
-        portfolio[symbol] = (weights[symbol] || 100 / selectedEtfs.length) / 100;
+      const portfolioRecord: Record<string, number> = {};
+      portfolio.forEach(p => {
+        portfolioRecord[p.symbol] = p.weight;
       });
 
-      const response = await stressTestAPI.runAllStressTests({ portfolio });
+      const response = await stressTestAPI.runAllStressTests({ portfolio: portfolioRecord });
       setAllResults(response);
     } catch (err: any) {
       setError(err.response?.data?.detail || '測試失敗');
@@ -137,8 +142,6 @@ const StressTest: React.FC = () => {
       setLoading(false);
     }
   };
-
-  // 格式化百分比
 
   return (
     <Box sx={{ p: 3 }}>
@@ -174,51 +177,14 @@ const StressTest: React.FC = () => {
               測試設定
             </Typography>
 
-            <FormControl fullWidth sx={{ mb: 3 }}>
-              <InputLabel>選擇 ETF</InputLabel>
-              <Select
-                multiple
-                value={selectedEtfs}
-                onChange={(e) => {
-                  const symbols = e.target.value as string[];
-                  setSelectedEtfs(symbols);
-                  const newWeights: Record<string, number> = {};
-                  symbols.forEach(s => {
-                    newWeights[s] = weights[s] || (100 / symbols.length);
-                  });
-                  setWeights(newWeights);
-                }}
-                renderValue={(selected) => (
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                    {selected.map((value) => (
-                      <Chip key={value} label={value} size="small" />
-                    ))}
-                  </Box>
-                )}
-              >
-                {etfs.map((etf) => (
-                  <MenuItem key={etf.symbol} value={etf.symbol}>
-                    {etf.symbol} - {etf.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-
-            {selectedEtfs.length > 0 && (
-              <Box sx={{ mb: 3 }}>
-                <Typography gutterBottom>權重設定</Typography>
-                {selectedEtfs.map(symbol => (
-                  <Box key={symbol} sx={{ mb: 2 }}>
-                    <Typography variant="caption">{symbol}</Typography>
-                    <Chip
-                      label={`${(weights[symbol] || (100 / selectedEtfs.length)).toFixed(0)}%`}
-                      size="small"
-                      sx={{ ml: 1 }}
-                    />
-                  </Box>
-                ))}
-              </Box>
-            )}
+            {/* 投資組合選擇器 */}
+            <PortfolioSelector
+              portfolio={portfolio}
+              onPortfolioChange={setPortfolio}
+              minEtfs={2}
+              maxEtfs={10}
+              showSaveLoad={true}
+            />
 
             <TabPanel value={tabValue} index={0}>
               <FormControl fullWidth sx={{ mb: 3 }}>
@@ -228,8 +194,14 @@ const StressTest: React.FC = () => {
                   onChange={(e) => setSelectedScenario(e.target.value)}
                 >
                   {scenarios.map((scenario) => (
-                    <MenuItem key={scenario.id} value={scenario.id}>
+                    <MenuItem 
+                      key={scenario.id} 
+                      value={scenario.id}
+                      disabled={scenario.available === false}
+                      sx={scenario.available === false ? { color: 'text.disabled', fontStyle: 'italic' } : {}}
+                    >
                       {scenario.name}
+                      {scenario.available === false && ' (需要歷史數據)'}
                     </MenuItem>
                   ))}
                 </Select>
@@ -249,7 +221,7 @@ const StressTest: React.FC = () => {
                 variant="contained"
                 fullWidth
                 onClick={handleSingleTest}
-                disabled={loading || selectedEtfs.length < 2 || !selectedScenario}
+                disabled={loading || portfolio.length < 2 || !isWeightValid || !selectedScenario}
                 startIcon={<TrendingDownIcon />}
               >
                 執行測試
@@ -262,7 +234,7 @@ const StressTest: React.FC = () => {
                 fullWidth
                 color="secondary"
                 onClick={handleAllTests}
-                disabled={loading || selectedEtfs.length < 2}
+                disabled={loading || portfolio.length < 2 || !isWeightValid}
                 startIcon={<TimelineIcon />}
               >
                 測試所有情境

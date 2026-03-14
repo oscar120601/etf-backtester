@@ -239,7 +239,13 @@ const Backtest: React.FC = () => {
                 </Typography>
                 <TemplateSelector
                   onSelect={(template: PortfolioTemplate) => {
-                    setHoldings(template.holdings.map(h => ({ symbol: h.symbol, weight: h.weight })));
+                    console.log('Applying template:', template);
+                    const newHoldings = template.holdings.map(h => ({ 
+                      symbol: h.symbol, 
+                      weight: h.weight 
+                    }));
+                    console.log('New holdings:', newHoldings);
+                    setHoldings(newHoldings);
                   }}
                   disabled={loading}
                 />

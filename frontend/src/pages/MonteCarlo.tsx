@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   Box,
   Button,
@@ -10,25 +10,21 @@ import {
   Slider,
   Chip,
   Divider,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   CircularProgress,
 } from '@mui/material';
 import { Line } from 'react-chartjs-2';
-import { etfAPI, backtestAPI } from '../services/api';
+import { backtestAPI } from '../services/api';
 import LoadingOverlay from '../components/LoadingOverlay';
 import ErrorAlert from '../components/ErrorAlert';
-import type { ETF, MonteCarloResponse } from '../types';
+import PortfolioSelector from '../components/PortfolioSelector';
+import type { MonteCarloResponse } from '../types';
 
 const SIMULATION_YEARS_OPTIONS = [10, 20, 30, 40, 50];
 const SIMULATION_COUNT_OPTIONS = [100, 500, 1000, 5000];
 
 const MonteCarlo: React.FC = () => {
   // 狀態
-  const [etfs, setEtfs] = useState<ETF[]>([]);
-  const [selectedETF, setSelectedETF] = useState('VTI');
+  const [portfolio, setPortfolio] = useState<{ symbol: string; weight: number }[]>([]);
   const [years, setYears] = useState(30);
   const [initialAmount, setInitialAmount] = useState(10000);
   const [monthlyContribution, setMonthlyContribution] = useState(500);
@@ -36,34 +32,31 @@ const MonteCarlo: React.FC = () => {
   const [targetAmount, setTargetAmount] = useState(1000000);
 
   const [loading, setLoading] = useState(false);
-  const [loadingEtfs, setLoadingEtfs] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<MonteCarloResponse | null>(null);
 
-  // 載入 ETF 列表
-  useEffect(() => {
-    const loadETFs = async () => {
-      setLoadingEtfs(true);
-      try {
-        const data = await etfAPI.getAll();
-        setEtfs(data);
-      } catch (err) {
-        setError('無法載入 ETF 列表');
-      } finally {
-        setLoadingEtfs(false);
-      }
-    };
-    loadETFs();
-  }, []);
+  // 檢查權重總和
+  const totalWeight = portfolio.reduce((sum, p) => sum + p.weight, 0);
+  const isWeightValid = Math.abs(totalWeight - 1.0) < 0.001;
 
   // 執行模擬
   const runSimulation = async () => {
+    if (portfolio.length === 0) {
+      setError('請先選擇至少一檔 ETF');
+      return;
+    }
+
+    if (!isWeightValid) {
+      setError('權重總和必須為 100%');
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     try {
       const response = await backtestAPI.runMonteCarlo({
-        portfolio: [{ symbol: selectedETF, weight: 1.0 }],
+        portfolio,
         years,
         initial_amount: initialAmount,
         monthly_contribution: monthlyContribution,
@@ -82,8 +75,8 @@ const MonteCarlo: React.FC = () => {
   // 準備圖表數據
   const chartData = result
     ? {
-        labels: Array.from({ length: result.years * 12 + 1 }, (_, i) => 
-          `第 ${Math.floor(i / 12)} 年`
+        labels: Array.from({ length: result.years + 1 }, (_, i) => 
+          `第 ${i} 年`
         ),
         datasets: [
           {
@@ -149,6 +142,12 @@ const MonteCarlo: React.FC = () => {
       },
     },
     scales: {
+      x: {
+        ticks: {
+          maxTicksLimit: 15,
+          maxRotation: 45,
+        },
+      },
       y: {
         beginAtZero: true,
         ticks: {
@@ -164,7 +163,6 @@ const MonteCarlo: React.FC = () => {
 
   return (
     <Box sx={{ maxWidth: 1200, mx: 'auto', p: 3 }}>
-      <LoadingOverlay show={loadingEtfs} message="載入 ETF 資料..." />
       <LoadingOverlay show={loading} message={`執行蒙地卡羅模擬 (${simulations}次)...`} />
 
       <Typography variant="h4" gutterBottom>
@@ -186,21 +184,16 @@ const MonteCarlo: React.FC = () => {
                 模擬設定
               </Typography>
 
-              {/* ETF 選擇 */}
-              <FormControl fullWidth sx={{ mb: 2 }}>
-                <InputLabel>選擇 ETF</InputLabel>
-                <Select
-                  value={selectedETF}
-                  label="選擇 ETF"
-                  onChange={(e) => setSelectedETF(e.target.value)}
-                >
-                  {etfs.map((etf) => (
-                    <MenuItem key={etf.symbol} value={etf.symbol}>
-                      {etf.symbol} - {etf.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              {/* 投資組合選擇器 */}
+              <PortfolioSelector
+                portfolio={portfolio}
+                onPortfolioChange={setPortfolio}
+                minEtfs={1}
+                maxEtfs={10}
+                showSaveLoad={true}
+              />
+
+              <Divider sx={{ my: 2 }} />
 
               {/* 初始金額 */}
               <TextField
@@ -268,12 +261,12 @@ const MonteCarlo: React.FC = () => {
                 sx={{ mb: 2 }}
               />
 
-              {/* 執行按鈕 */}
+              {/* 執行按 */}
               <Button
                 variant="contained"
                 fullWidth
                 onClick={runSimulation}
-                disabled={loading}
+                disabled={loading || portfolio.length === 0 || !isWeightValid}
                 size="large"
               >
                 {loading ? (

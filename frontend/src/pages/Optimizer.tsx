@@ -25,6 +25,8 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  Tabs,
+  Tab,
 } from '@mui/material';
 import {
   Info as InfoIcon,
@@ -32,10 +34,13 @@ import {
   TrendingDown as TrendingDownIcon,
   ShowChart as ShowChartIcon,
   AutoGraph as AutoGraphIcon,
+  FolderOpen as FolderOpenIcon,
+  Edit as EditIcon,
 } from '@mui/icons-material';
-import { optimizerAPI, etfAPI } from '../services/api';
+import { optimizerAPI, etfAPI, savedBacktestAPI } from '../services/api';
 import type {
   ETF,
+  SavedBacktest,
   OptimizationResponse,
   OptimizedPortfolio,
 } from '../types';
@@ -45,7 +50,9 @@ import LoadingOverlay from '../components/LoadingOverlay';
 const Optimizer: React.FC = () => {
   // 狀態
   const [etfs, setEtfs] = useState<ETF[]>([]);
+  const [savedPortfolios, setSavedPortfolios] = useState<SavedBacktest[]>([]);
   const [selectedEtfs, setSelectedEtfs] = useState<string[]>([]);
+  const [inputTab, setInputTab] = useState<'manual' | 'saved'>('manual');
   const [objective, setObjective] = useState<'max_sharpe' | 'min_volatility' | 'target_return'>('max_sharpe');
   const [targetReturn, setTargetReturn] = useState<number>(8);
   const [riskFreeRate, setRiskFreeRate] = useState<number>(4.5);
@@ -57,22 +64,36 @@ const Optimizer: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<OptimizationResponse | null>(null);
 
-  // 載入 ETF 列表
+  // 載入 ETF 列表和已儲存的組合
   useEffect(() => {
-    const loadETFs = async () => {
+    const loadData = async () => {
       try {
-        const data = await etfAPI.getAll();
-        setEtfs(data);
+        const [etfsData, savedData] = await Promise.all([
+          etfAPI.getAll(),
+          savedBacktestAPI.getAll(),
+        ]);
+        setEtfs(etfsData);
+        setSavedPortfolios(savedData.items || []);
         // 預設選擇前 4 檔
-        if (data.length >= 4) {
-          setSelectedEtfs(data.slice(0, 4).map(e => e.symbol));
+        if (etfsData.length >= 4) {
+          setSelectedEtfs(etfsData.slice(0, 4).map(e => e.symbol));
         }
       } catch (err) {
-        console.error('Failed to load ETFs:', err);
+        console.error('Failed to load data:', err);
       }
     };
-    loadETFs();
+    loadData();
   }, []);
+
+  // 從已儲存組合載入 ETF 列表
+  const handleLoadSaved = (id: string) => {
+    const saved = savedPortfolios.find(p => p.id.toString() === id);
+    if (saved && saved.portfolio) {
+      const symbols = saved.portfolio.map(h => h.symbol);
+      setSelectedEtfs(symbols);
+      setInputTab('manual'); // 載入後切換到手動模式
+    }
+  };
 
   // 執行優化
   const handleOptimize = async () => {
@@ -119,7 +140,7 @@ const Optimizer: React.FC = () => {
         投資組合優化器
       </Typography>
       <Typography variant="body1" color="text.secondary" paragraph>
-        基於現代投資組合理論 (MPT)，計算效率前緣並找出最佳資產配置。學習標竿：Portfolio Visualizer
+        基於現代投資組合理論 (MPT)，計算效率前緣並找出最佳資產配置
       </Typography>
 
       {/* 錯誤提示 */}
@@ -137,28 +158,65 @@ const Optimizer: React.FC = () => {
               優化設定
             </Typography>
 
-            {/* ETF 選擇 */}
-            <FormControl fullWidth sx={{ mb: 3 }}>
-              <InputLabel>選擇 ETF（可多選）</InputLabel>
-              <Select
-                multiple
-                value={selectedEtfs}
-                onChange={(e) => setSelectedEtfs(e.target.value as string[])}
-                renderValue={(selected) => (
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                    {selected.map((value) => (
-                      <Chip key={value} label={value} size="small" />
-                    ))}
-                  </Box>
-                )}
-              >
-                {etfs.map((etf) => (
-                  <MenuItem key={etf.symbol} value={etf.symbol}>
-                    {etf.symbol} - {etf.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            {/* ETF 選擇分頁 */}
+            <Tabs
+              value={inputTab}
+              onChange={(_, v) => setInputTab(v)}
+              sx={{ mb: 2 }}
+            >
+              <Tab value="manual" icon={<EditIcon />} label="手動選擇" />
+              <Tab value="saved" icon={<FolderOpenIcon />} label="載入組合" />
+            </Tabs>
+
+            {inputTab === 'saved' ? (
+              <FormControl fullWidth sx={{ mb: 3 }}>
+                <InputLabel>選擇已儲存的組合</InputLabel>
+                <Select
+                  value=""
+                  onChange={(e) => handleLoadSaved(e.target.value)}
+                  label="選擇已儲存的組合"
+                >
+                  {savedPortfolios.length === 0 && (
+                    <MenuItem disabled>無已儲存的組合</MenuItem>
+                  )}
+                  {savedPortfolios.map((saved) => (
+                    <MenuItem key={saved.id} value={saved.id.toString()}>
+                      <Box>
+                        <Typography variant="body2">{saved.name}</Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {saved.portfolio?.length || 0} 檔 ETF
+                        </Typography>
+                      </Box>
+                    </MenuItem>
+                  ))}
+                </Select>
+                <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                  載入後會自動切換到手動模式
+                </Typography>
+              </FormControl>
+            ) : (
+              <FormControl fullWidth sx={{ mb: 3 }}>
+                <InputLabel>選擇 ETF（可多選）</InputLabel>
+                <Select
+                  multiple
+                  value={selectedEtfs}
+                  onChange={(e) => setSelectedEtfs(e.target.value as string[])}
+                  renderValue={(selected) => (
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                      {selected.map((value) => (
+                        <Chip key={value} label={value} size="small" />
+                      ))}
+                    </Box>
+                  )}
+                >
+                  {etfs.map((etf) => (
+                    <MenuItem key={etf.symbol} value={etf.symbol}>
+                      {etf.symbol} - {etf.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
 
             {/* 優化目標 */}
             <FormControl fullWidth sx={{ mb: 3 }}>

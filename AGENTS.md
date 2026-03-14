@@ -28,7 +28,7 @@
 - **UI**: Material-UI v7
 - **圖表**: Chart.js + chartjs-plugin-zoom
 - **報告**: jsPDF, html2canvas, xlsx
-- **狀態**: React Hooks + localStorage
+- **狀態**: React Hooks + 後端數據庫
 
 ---
 
@@ -80,7 +80,7 @@ frontend/
 │   │   └── MonteCarlo.tsx
 │   ├── utils/                # 工具函數
 │   │   ├── chartConfig.ts    # Chart.js zoom 配置
-│   │   └── portfolioStorage.ts   # localStorage 操作
+│   │   └── portfolioStorage.ts   # (已棄用，統一使用後端 API)
 │   └── services/api.ts       # API 服務
 └── package.json
 ```

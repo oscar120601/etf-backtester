@@ -122,7 +122,7 @@ async def optimize_portfolio(
         )
         
         # 2. 最小風險組合
-        min_vol = optimizer.optimize_min_volatility(weight_constraints)
+        min_vol = optimizer.optimize_min_volatility(weight_constraints=weight_constraints)
         recommended_portfolios["min_volatility"] = OptimizedPortfolio(
             name="最小風險組合",
             description="波動率最低的組合，適合保守型投資者",

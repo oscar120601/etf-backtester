@@ -24,6 +24,7 @@ class CrisisScenario:
     start_date: date
     end_date: date
     benchmark_symbol: str = "SPY"  # 比較基準
+    available: bool = True  # 是否可用（數據庫中有數據）
 
 
 @dataclass
@@ -51,20 +52,47 @@ class StressTestEngine:
     
     # 預設危機情境
     DEFAULT_SCENARIOS: List[CrisisScenario] = [
+        # 歷史情境（數據不可用，僅供參考）
         CrisisScenario(
             id="2008_financial_crisis",
             name="2008 金融危機",
-            description="次貸危機、雷曼兄弟倒閉，全球金融市場崩盤",
+            description="次貸危機、雷曼兄弟倒閉，全球金融市場崩盤（需要歷史數據）",
             start_date=date(2007, 10, 1),
             end_date=date(2009, 3, 31),
-            benchmark_symbol="SPY"
+            benchmark_symbol="SPY",
+            available=False
         ),
+        # 可用情境（數據庫中 2020-2024）
         CrisisScenario(
             id="2020_covid_crash",
             name="2020 疫情崩盤",
             description="COVID-19 爆發，全球股市快速下跌後迅速反彈",
             start_date=date(2020, 2, 19),
             end_date=date(2020, 3, 23),
+            benchmark_symbol="SPY"
+        ),
+        CrisisScenario(
+            id="2020_covid_recovery",
+            name="2020 疫情復甦",
+            description="聯準會大規模 QE，股市從谷底強勁反彈",
+            start_date=date(2020, 3, 23),
+            end_date=date(2020, 12, 31),
+            benchmark_symbol="SPY"
+        ),
+        CrisisScenario(
+            id="2021_meme_stock",
+            name="2021 散戶狂潮",
+            description="GameStop 等迷因股引發市場劇烈波動，對沖基金軋空",
+            start_date=date(2021, 1, 1),
+            end_date=date(2021, 2, 28),
+            benchmark_symbol="SPY"
+        ),
+        CrisisScenario(
+            id="2021_growth_peak",
+            name="2021 成長股高峰",
+            description="科技股達到歷史高點，ARKK 等創新 ETF 瘋漲",
+            start_date=date(2021, 1, 1),
+            end_date=date(2021, 12, 31),
             benchmark_symbol="SPY"
         ),
         CrisisScenario(
@@ -76,27 +104,27 @@ class StressTestEngine:
             benchmark_symbol="SPY"
         ),
         CrisisScenario(
-            id="2022_bond_bear",
-            name="2022 債券熊市",
-            description="債券價格因升息而大幅下跌，美國公債指數創下歷史最差年度",
+            id="2022_bear_market",
+            name="2022 熊市",
+            description="美國股市進入技術性熊市，科技股重創",
             start_date=date(2022, 1, 1),
             end_date=date(2022, 12, 31),
-            benchmark_symbol="TLT"  # 20+年期公債 ETF
-        ),
-        CrisisScenario(
-            id="2018_trade_war",
-            name="2018 貿易戰",
-            description="中美貿易戰引發市場波動，科技股重創",
-            start_date=date(2018, 9, 20),
-            end_date=date(2018, 12, 24),
             benchmark_symbol="SPY"
         ),
         CrisisScenario(
-            id="2021_meme_stock",
-            name="2021 散戶狂潮",
-            description="GameStop 等迷因股引發市場劇烈波動，對沖基金軋空",
-            start_date=date(2021, 1, 1),
-            end_date=date(2021, 2, 28),
+            id="2023_banking_crisis",
+            name="2023 銀行業危機",
+            description="SVB 倒閉引發區域性銀行危機，市場短暫恐慌",
+            start_date=date(2023, 3, 1),
+            end_date=date(2023, 5, 1),
+            benchmark_symbol="SPY"
+        ),
+        CrisisScenario(
+            id="2023_ai_rally",
+            name="2023 AI 狂潮",
+            description="ChatGPT 引爆 AI 概念股瘋漲，科技股強劲反彈",
+            start_date=date(2023, 1, 1),
+            end_date=date(2023, 12, 31),
             benchmark_symbol="SPY"
         ),
     ]

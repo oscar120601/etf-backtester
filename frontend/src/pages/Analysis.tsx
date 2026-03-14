@@ -34,6 +34,7 @@ import type { ETF } from '../types';
 import LoadingOverlay from '../components/LoadingOverlay';
 import RollingReturnsChart from '../components/RollingReturnsChart';
 import CorrelationHeatmap from '../components/CorrelationHeatmap';
+import PortfolioSelector from '../components/PortfolioSelector';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -57,8 +58,7 @@ const Analysis: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   // 滾動報酬狀態
-  const [rollingSymbols, setRollingSymbols] = useState<string[]>([]);
-  const [rollingWeights, setRollingWeights] = useState<Record<string, number>>({});
+  const [rollingPortfolio, setRollingPortfolio] = useState<{ symbol: string; weight: number }[]>([]);
   const [rollingWindowYears, setRollingWindowYears] = useState<number[]>([1, 3, 5, 10]);
   const [rollingResult, setRollingResult] = useState<any>(null);
 
@@ -84,10 +84,18 @@ const Analysis: React.FC = () => {
     setTabValue(newValue);
   };
 
+  // 檢查權重總和
+  const rollingTotalWeight = rollingPortfolio.reduce((sum, p) => sum + p.weight, 0);
+  const isRollingWeightValid = Math.abs(rollingTotalWeight - 1.0) < 0.001;
+
   // 執行滾動報酬分析
   const handleRollingReturns = async () => {
-    if (rollingSymbols.length < 2) {
+    if (rollingPortfolio.length < 2) {
       setError('請至少選擇 2 檔 ETF');
+      return;
+    }
+    if (!isRollingWeightValid) {
+      setError('權重總和必須為 100%');
       return;
     }
 
@@ -96,14 +104,8 @@ const Analysis: React.FC = () => {
 
     try {
       const portfolio: Record<string, number> = {};
-      rollingSymbols.forEach(symbol => {
-        portfolio[symbol] = rollingWeights[symbol] || (1 / rollingSymbols.length);
-      });
-
-      // 正規化權重
-      const totalWeight = Object.values(portfolio).reduce((a, b) => a + b, 0);
-      Object.keys(portfolio).forEach(key => {
-        portfolio[key] = portfolio[key] / totalWeight;
+      rollingPortfolio.forEach(p => {
+        portfolio[p.symbol] = p.weight;
       });
 
       const response = await analysisAPI.getRollingReturns({
@@ -188,61 +190,16 @@ const Analysis: React.FC = () => {
                 滾動報酬設定
               </Typography>
 
-              <FormControl fullWidth sx={{ mb: 3 }}>
-                <InputLabel>選擇 ETF</InputLabel>
-                <Select
-                  multiple
-                  value={rollingSymbols}
-                  onChange={(e) => {
-                    const symbols = e.target.value as string[];
-                    setRollingSymbols(symbols);
-                    // 初始化權重
-                    const weights: Record<string, number> = {};
-                    symbols.forEach(s => {
-                      weights[s] = rollingWeights[s] || (100 / symbols.length);
-                    });
-                    setRollingWeights(weights);
-                  }}
-                  renderValue={(selected) => (
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                      {selected.map((value) => (
-                        <Chip key={value} label={value} size="small" />
-                      ))}
-                    </Box>
-                  )}
-                >
-                  {etfs.map((etf) => (
-                    <MenuItem key={etf.symbol} value={etf.symbol}>
-                      {etf.symbol} - {etf.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              {/* 投資組合選擇器 */}
+              <PortfolioSelector
+                portfolio={rollingPortfolio}
+                onPortfolioChange={setRollingPortfolio}
+                minEtfs={2}
+                maxEtfs={10}
+                showSaveLoad={true}
+              />
 
-              {/* 權重設定 */}
-              {rollingSymbols.length > 0 && (
-                <Box sx={{ mb: 3 }}>
-                  <Typography gutterBottom>權重設定</Typography>
-                  {rollingSymbols.map(symbol => (
-                    <Box key={symbol} sx={{ mb: 2 }}>
-                      <Typography variant="caption">{symbol}</Typography>
-                      <Slider
-                        value={rollingWeights[symbol] || (100 / rollingSymbols.length)}
-                        onChange={(_, value) => setRollingWeights({
-                          ...rollingWeights,
-                          [symbol]: value as number
-                        })}
-                        min={0}
-                        max={100}
-                        valueLabelDisplay="auto"
-                        valueLabelFormat={(v) => `${v.toFixed(0)}%`}
-                      />
-                    </Box>
-                  ))}
-                </Box>
-              )}
-
-              <Box sx={{ mb: 3 }}>
+              <Box sx={{ mt: 3 }}>
                 <Typography gutterBottom>
                   滾動期間
                 </Typography>
@@ -269,7 +226,8 @@ const Analysis: React.FC = () => {
                 variant="contained"
                 fullWidth
                 onClick={handleRollingReturns}
-                disabled={loading || rollingSymbols.length < 2}
+                disabled={loading || rollingPortfolio.length < 2 || !isRollingWeightValid}
+                sx={{ mt: 3 }}
               >
                 {loading ? '計算中...' : '執行分析'}
               </Button>

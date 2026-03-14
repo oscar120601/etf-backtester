@@ -27,6 +27,7 @@ class RebalanceFrequency(str, Enum):
     MONTHLY = "monthly"     # 每月
     QUARTERLY = "quarterly" # 每季
     ANNUAL = "annual"       # 每年
+    YEARLY = "yearly"       # 每年（別名）
 
 
 @dataclass

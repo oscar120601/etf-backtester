@@ -137,7 +137,17 @@ async def delete_saved_backtest(
 
 def _convert_to_summary(db_backtest: SavedBacktest):
     """轉換為摘要格式"""
-    from app.schemas.saved_backtest import SavedBacktestSummary
+    from app.schemas.saved_backtest import SavedBacktestSummary, PortfolioHolding
+    import json
+    
+    # 解析 portfolio_config
+    portfolio = None
+    if db_backtest.portfolio_config:
+        try:
+            portfolio_data = json.loads(db_backtest.portfolio_config)
+            portfolio = [PortfolioHolding(**item) for item in portfolio_data]
+        except (json.JSONDecodeError, TypeError):
+            portfolio = None
     
     return SavedBacktestSummary(
         id=db_backtest.id,
@@ -150,6 +160,7 @@ def _convert_to_summary(db_backtest: SavedBacktest):
         max_drawdown=float(db_backtest.max_drawdown) if db_backtest.max_drawdown else None,
         sharpe_ratio=float(db_backtest.sharpe_ratio) if db_backtest.sharpe_ratio else None,
         created_at=db_backtest.created_at,
+        portfolio=portfolio,
     )
 
 

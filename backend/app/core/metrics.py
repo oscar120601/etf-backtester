@@ -292,6 +292,33 @@ class MetricsCalculator:
         }
     
     @staticmethod
+    def calculate_drawdown_series(
+        portfolio_values: List[Tuple[date, Decimal]]
+    ) -> List[Tuple[date, float]]:
+        """
+        計算回撤時間序列
+        
+        Returns:
+            List[Tuple[date, float]]: [(日期, 回撤百分比), ...]
+        """
+        if len(portfolio_values) < 2:
+            return []
+        
+        dates = [d for d, _ in portfolio_values]
+        values = [float(v) for _, v in portfolio_values]
+        
+        df = pd.DataFrame({'date': dates, 'value': values})
+        df.set_index('date', inplace=True)
+        
+        # 計算歷史最高價值
+        peak = df['value'].expanding().max()
+        
+        # 計算回撤百分比
+        drawdown = (df['value'] - peak) / peak
+        
+        return [(d, float(dd)) for d, dd in zip(dates, drawdown.values)]
+    
+    @staticmethod
     def _calculate_var(daily_returns: pd.Series, confidence: float = 0.95) -> Tuple[float, float]:
         """
         計算風險值 (VaR) 和條件風險值 (CVaR)
