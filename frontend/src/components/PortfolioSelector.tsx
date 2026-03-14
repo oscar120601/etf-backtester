@@ -59,9 +59,9 @@ export default function PortfolioSelector({
 
   // 計算總權重（百分比形式）
   const totalWeight = portfolio.reduce((sum, p) => sum + p.weight, 0);
-  const totalWeightPercent = Math.round(totalWeight * 100);
+  const totalWeightPercent = Number((totalWeight * 100).toFixed(2));
   const isWeightValid = Math.abs(totalWeight - 1.0) < 0.001;
-  const remainingWeight = Math.round((1 - totalWeight) * 100);
+  const remainingWeight = Number((100 - totalWeight * 100).toFixed(2));
 
   // 載入 ETF 列表和已儲存的組合
   useEffect(() => {
@@ -84,7 +84,7 @@ export default function PortfolioSelector({
   useEffect(() => {
     const newWeightInput: Record<string, string> = {};
     portfolio.forEach(p => {
-      newWeightInput[p.symbol] = Math.round(p.weight * 100).toString();
+      newWeightInput[p.symbol] = (p.weight * 100).toFixed(2).replace(/\.?0+$/, '');
     });
     setWeightInput(newWeightInput);
   }, [portfolio]);
@@ -96,7 +96,7 @@ export default function PortfolioSelector({
       // 同步更新 weightInput
       const newWeightInput: Record<string, string> = {};
       saved.portfolio.forEach(p => {
-        newWeightInput[p.symbol] = Math.round(p.weight * 100).toString();
+        newWeightInput[p.symbol] = (p.weight * 100).toFixed(2).replace(/\.?0+$/, '');
       });
       setWeightInput(newWeightInput);
       
@@ -145,7 +145,7 @@ export default function PortfolioSelector({
     // 同步更新 weightInput
     const newWeightInput: Record<string, string> = {};
     newPortfolio.forEach(p => {
-      newWeightInput[p.symbol] = Math.round(p.weight * 100).toString();
+      newWeightInput[p.symbol] = (p.weight * 100).toFixed(2).replace(/\.?0+$/, '');
     });
     setWeightInput(newWeightInput);
 
@@ -168,7 +168,7 @@ export default function PortfolioSelector({
     // 同步更新 weightInput
     const newWeightInput: Record<string, string> = {};
     newPortfolio.forEach(p => {
-      newWeightInput[p.symbol] = Math.round(p.weight * 100).toString();
+      newWeightInput[p.symbol] = (p.weight * 100).toFixed(2).replace(/\.?0+$/, '');
     });
     setWeightInput(newWeightInput);
     
@@ -200,7 +200,7 @@ export default function PortfolioSelector({
     // 同步更新 weightInput
     const newWeightInput: Record<string, string> = {};
     newPortfolio.forEach(p => {
-      newWeightInput[p.symbol] = Math.round(p.weight * 100).toString();
+      newWeightInput[p.symbol] = (p.weight * 100).toFixed(2).replace(/\.?0+$/, '');
     });
     setWeightInput(newWeightInput);
     
@@ -371,7 +371,7 @@ export default function PortfolioSelector({
                         onChange={(_, v) => handleWeightChange(holding.symbol, v.toString())}
                         min={0}
                         max={100}
-                        step={1}
+                        step={0.1}
                         disabled={disabled}
                         size="small"
                         valueLabelDisplay="auto"
@@ -380,7 +380,7 @@ export default function PortfolioSelector({
                     </Box>
 
                     <TextField
-                      value={weightInput[holding.symbol] || Math.round(holding.weight * 100).toString()}
+                      value={weightInput[holding.symbol] !== undefined ? weightInput[holding.symbol] : (holding.weight * 100).toFixed(2).replace(/\.?0+$/, '')}
                       onChange={(e) => handleWeightChange(holding.symbol, e.target.value)}
                       size="small"
                       disabled={disabled}

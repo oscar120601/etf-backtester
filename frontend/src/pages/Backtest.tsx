@@ -272,10 +272,10 @@ const Backtest: React.FC = () => {
                     size="small"
                     type="number"
                     label="權重 %"
-                    value={(holding.weight * 100).toFixed(0)}
-                    onChange={(e) => handleHoldingChange(index, 'weight', Number(e.target.value) / 100)}
+                    value={(holding.weight * 100).toString()}
+                    onChange={(e) => handleHoldingChange(index, 'weight', parseFloat(e.target.value) / 100)}
                     sx={{ width: 80 }}
-                    inputProps={{ min: 0, max: 100, step: 5 }}
+                    inputProps={{ min: 0, max: 100, step: 0.1 }}
                   />
                   <IconButton
                     size="small"
@@ -300,7 +300,7 @@ const Backtest: React.FC = () => {
               {/* 權重總和顯示 */}
               <Box sx={{ mb: 2 }}>
                 <Typography variant="caption" color={Math.abs(totalWeight - 1) < 0.001 ? 'success.main' : 'error.main'}>
-                  總權重: {(totalWeight * 100).toFixed(1)}%
+                  總權重: {(totalWeight * 100).toFixed(2)}%
                 </Typography>
               </Box>
 
