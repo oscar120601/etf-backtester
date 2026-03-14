@@ -4,10 +4,6 @@ import {
   Typography,
   Paper,
   Grid,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Slider,
   Button,
   Alert,
@@ -29,8 +25,7 @@ import {
   BarChart as BarChartIcon,
   MultilineChart as MultilineChartIcon,
 } from '@mui/icons-material';
-import { analysisAPI, etfAPI } from '../services/api';
-import type { ETF } from '../types';
+import { analysisAPI } from '../services/api';
 import LoadingOverlay from '../components/LoadingOverlay';
 import RollingReturnsChart from '../components/RollingReturnsChart';
 import CorrelationHeatmap from '../components/CorrelationHeatmap';
@@ -53,7 +48,6 @@ function TabPanel(props: TabPanelProps) {
 
 const Analysis: React.FC = () => {
   const [tabValue, setTabValue] = useState(0);
-  const [etfs, setEtfs] = useState<ETF[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -69,15 +63,7 @@ const Analysis: React.FC = () => {
 
   // 載入 ETF 列表
   useEffect(() => {
-    const loadETFs = async () => {
-      try {
-        const data = await etfAPI.getAll();
-        setEtfs(data);
-      } catch (err) {
-        console.error('Failed to load ETFs:', err);
-      }
-    };
-    loadETFs();
+    // 這裡原本用於加權相關性選擇，現已由 PortfolioSelector 處理
   }, []);
 
   const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
@@ -363,13 +349,13 @@ const Analysis: React.FC = () => {
                 </Typography>
                 <Slider
                   value={corrLookback}
-                  onChange={(_, value) => setCorrLookback(value as number)}
+                  onChange={(_, value: number | number[]) => setCorrLookback(value as number)}
                   min={1}
                   max={10}
                   step={1}
                   marks={[{ value: 1, label: '1年' }, { value: 5, label: '5年' }, { value: 10, label: '10年' }]}
                   valueLabelDisplay="auto"
-                  valueLabelFormat={(v) => `${v}年`}
+                  valueLabelFormat={(v: number) => `${v}年`}
                 />
               </Box>
 
