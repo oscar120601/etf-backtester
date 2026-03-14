@@ -24,7 +24,7 @@ const api = axios.create({
 // ETF API
 export const etfAPI = {
   getAll: async (): Promise<ETF[]> => {
-    const response = await api.get('/etfs');
+    const response = await api.get('/etfs?limit=100');
     // 後端返回 { items: [...], total, page, limit }
     return response.data.items || response.data;
   },
@@ -40,7 +40,8 @@ export const etfAPI = {
     if (endDate) params.end_date = endDate;
     
     const response = await api.get(`/etfs/${symbol}/prices`, { params });
-    return response.data;
+    // 後端返回 { symbol, prices: [...], start_date, end_date }
+    return response.data.prices || response.data;
   },
 
   search: async (query: string): Promise<ETF[]> => {

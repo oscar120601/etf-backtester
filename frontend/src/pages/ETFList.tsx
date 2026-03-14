@@ -53,7 +53,7 @@ const ETFList: React.FC = () => {
         // 並行載入 ETF 列表和資料狀態
         const [etfsData, dataStatus] = await Promise.all([
           etfAPI.getAll(),
-          dataSyncAPI.getStatus().catch(() => ({ status: [] })), // 如果失敗則返回空狀態
+          dataSyncAPI.getStatus().catch(() => ({ status: [] })),
         ]);
 
         // 建立資料狀態映射
@@ -61,43 +61,18 @@ const ETFList: React.FC = () => {
           dataStatus.status.map((s: any) => [s.symbol, s])
         );
 
-        // 為每個 ETF 獲取價格範圍
-        const etfsWithData: ETFWithDataStatus[] = await Promise.all(
-          etfsData.map(async (etf) => {
-            const status = statusMap.get(etf.symbol);
-            
-            if (status?.latest_date) {
-              try {
-                const prices = await etfAPI.getPrices(etf.symbol);
-                if (prices.length > 0) {
-                  const dates = prices.map((p) => new Date(p.date).getTime());
-                  const earliest = new Date(Math.min(...dates));
-                  const latest = new Date(Math.max(...dates));
-                  const years = (latest.getTime() - earliest.getTime()) / (1000 * 60 * 60 * 24 * 365);
-                  
-                  return {
-                    ...etf,
-                    earliest_date: earliest.toISOString().split('T')[0],
-                    latest_date: latest.toISOString().split('T')[0],
-                    record_count: prices.length,
-                    data_span_years: years,
-                  };
-                }
-              } catch (e) {
-                console.warn(`Failed to get prices for ${etf.symbol}`);
-              }
-            }
-
-            // 如果沒有價格資料，只使用基本狀態
-            return {
-              ...etf,
-              earliest_date: null,
-              latest_date: status?.latest_date || null,
-              record_count: status?.record_count || 0,
-              data_span_years: null,
-            };
-          })
-        );
+        // 合併 ETF 資料和資料狀態
+        const etfsWithData: ETFWithDataStatus[] = etfsData.map((etf) => {
+          const status = statusMap.get(etf.symbol);
+          
+          return {
+            ...etf,
+            earliest_date: status?.earliest_date || null,
+            latest_date: status?.latest_date || null,
+            record_count: status?.record_count || 0,
+            data_span_years: status?.data_span_years || null,
+          };
+        });
 
         setEtfs(etfsWithData);
         setError(null);

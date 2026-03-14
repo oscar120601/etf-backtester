@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -21,7 +21,6 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-
   Divider,
 } from '@mui/material';
 import {
@@ -33,9 +32,7 @@ import {
   TrendingUp as TrendingUpIcon,
   CalendarToday as CalendarIcon,
 } from '@mui/icons-material';
-import { useEffect } from 'react';
-import { dataSyncAPI, etfAPI } from '../services/api';
-import type { ETF } from '../types';
+import { dataSyncAPI } from '../services/api';
 
 interface ETFDataStatus {
   symbol: string;
@@ -48,7 +45,6 @@ interface ETFDataStatus {
 }
 
 export default function DataManagement() {
-  const [, setEtfs] = useState<ETF[]>([]);
   const [dataStatus, setDataStatus] = useState<ETFDataStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
@@ -64,65 +60,24 @@ export default function DataManagement() {
     noData: 0,
   });
 
-  // 載入 ETF 和資料狀態
+  // 載入資料狀態
   const loadData = async () => {
     setLoading(true);
     setError(null);
     try {
-      // 並行載入 ETF 列表和資料同步狀態
-      const [etfsData, syncStatus] = await Promise.all([
-        etfAPI.getAll(),
-        dataSyncAPI.getStatus(),
-      ]);
-
-      setEtfs(etfsData);
-
-      // 為每個 ETF 取得價格統計
-      const statusWithDetails: ETFDataStatus[] = await Promise.all(
-        etfsData.map(async (etf) => {
-          const syncInfo = syncStatus.status.find((s: any) => s.symbol === etf.symbol);
-          
-          // 獲取該 ETF 的價格範圍
-          let earliestDate = null;
-          let dataSpanYears = null;
-          
-          if (syncInfo?.latest_date) {
-            try {
-              const prices = await etfAPI.getPrices(etf.symbol);
-              if (prices.length > 0) {
-                const dates = prices.map((p) => new Date(p.date));
-                earliestDate = new Date(Math.min(...dates.map((d) => d.getTime()))).toISOString().split('T')[0];
-                const latestDate = new Date(Math.max(...dates.map((d) => d.getTime())));
-                const earliest = new Date(earliestDate);
-                dataSpanYears = (latestDate.getTime() - earliest.getTime()) / (1000 * 60 * 60 * 24 * 365);
-              }
-            } catch (e) {
-              console.warn(`Failed to get price range for ${etf.symbol}`);
-            }
-          }
-
-          return {
-            symbol: etf.symbol,
-            name: etf.name,
-            earliest_date: earliestDate,
-            latest_date: syncInfo?.latest_date || null,
-            record_count: syncInfo?.record_count || 0,
-            days_since_update: syncInfo?.days_since_update || null,
-            data_span_years: dataSpanYears,
-          };
-        })
-      );
-
-      setDataStatus(statusWithDetails);
+      const syncStatus = await dataSyncAPI.getStatus();
+      
+      const statusList: ETFDataStatus[] = syncStatus.status || [];
+      setDataStatus(statusList);
 
       // 計算統計數據
-      const totalRecords = statusWithDetails.reduce((sum, s) => sum + s.record_count, 0);
-      const upToDate = statusWithDetails.filter((s) => s.days_since_update !== null && s.days_since_update <= 1).length;
-      const outdated = statusWithDetails.filter((s) => s.days_since_update !== null && s.days_since_update > 1).length;
-      const noData = statusWithDetails.filter((s) => s.days_since_update === null).length;
+      const totalRecords = statusList.reduce((sum, s) => sum + (s.record_count || 0), 0);
+      const upToDate = statusList.filter((s) => s.days_since_update !== null && s.days_since_update <= 1).length;
+      const outdated = statusList.filter((s) => s.days_since_update !== null && s.days_since_update > 1).length;
+      const noData = statusList.filter((s) => s.days_since_update === null).length;
 
       setStats({
-        totalEtfs: etfsData.length,
+        totalEtfs: statusList.length,
         totalRecords,
         upToDate,
         outdated,
@@ -335,16 +290,41 @@ export default function DataManagement() {
                   </TableCell>
                   <TableCell>{etf.name}</TableCell>
                   <TableCell align="center">
-                    {etf.earliest_date || '-'}
+                    {etf.earliest_date ? (
+                      <Chip
+                        label={etf.earliest_date}
+                        size="small"
+                        variant="outlined"
+                        color={etf.data_span_years && etf.data_span_years > 10 ? 'success' : 'default'}
+                      />
+                    ) : (
+                      <Chip label="無資料" size="small" color="error" />
+                    )}
                   </TableCell>
                   <TableCell align="center">
-                    {etf.latest_date || '-'}
+                    {etf.latest_date ? (
+                      <Chip
+                        label={etf.latest_date}
+                        size="small"
+                        variant="outlined"
+                      />
+                    ) : (
+                      '-'
+                    )}
                   </TableCell>
                   <TableCell align="right">
-                    {etf.record_count.toLocaleString()}
+                    {etf.record_count ? etf.record_count.toLocaleString() : '-'}
                   </TableCell>
                   <TableCell align="right">
-                    {etf.data_span_years ? `${etf.data_span_years.toFixed(1)} 年` : '-'}
+                    {etf.data_span_years ? (
+                      <Chip
+                        label={`${etf.data_span_years.toFixed(1)} 年`}
+                        size="small"
+                        color={etf.data_span_years > 20 ? 'success' : etf.data_span_years > 10 ? 'info' : 'warning'}
+                      />
+                    ) : (
+                      '-'
+                    )}
                   </TableCell>
                   <TableCell align="center">
                     <Chip

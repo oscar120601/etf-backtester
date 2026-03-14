@@ -187,17 +187,26 @@ async def get_price_status(
     db: Session = Depends(get_db),
 ):
     """
-    獲取所有 ETF 的價格資料狀態
+    獲取所有 ETF 的價格資料狀態（包含最早和最新日期）
     """
     try:
         etfs = db.query(ETF).filter(ETF.is_active == True).all()
         
         status_list = []
         for etf in etfs:
+            # 獲取最新價格
             latest_price = (
                 db.query(ETFPrice)
                 .filter(ETFPrice.symbol == etf.symbol)
                 .order_by(ETFPrice.date.desc())
+                .first()
+            )
+            
+            # 獲取最早價格
+            earliest_price = (
+                db.query(ETFPrice)
+                .filter(ETFPrice.symbol == etf.symbol)
+                .order_by(ETFPrice.date.asc())
                 .first()
             )
             
@@ -207,11 +216,19 @@ async def get_price_status(
                 .count()
             )
             
+            # 計算涵蓋年限
+            data_span_years = None
+            if earliest_price and latest_price:
+                days = (latest_price.date - earliest_price.date).days
+                data_span_years = round(days / 365.25, 1)
+            
             status_list.append({
                 "symbol": etf.symbol,
                 "name": etf.name,
+                "earliest_date": earliest_price.date.isoformat() if earliest_price else None,
                 "latest_date": latest_price.date.isoformat() if latest_price else None,
                 "record_count": count,
+                "data_span_years": data_span_years,
                 "days_since_update": (
                     (datetime.now().date() - latest_price.date).days
                     if latest_price else None
