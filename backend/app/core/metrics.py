@@ -16,6 +16,32 @@ import numpy as np
 import pandas as pd
 
 
+def sanitize_float(value: float) -> float:
+    """
+    清理浮點數值，確保 JSON 序列化安全
+    
+    將 inf, -inf, nan 轉換為 0.0
+    """
+    if value is None:
+        return 0.0
+    if np.isnan(value) or np.isinf(value):
+        return 0.0
+    return float(value)
+
+
+def sanitize_int(value) -> int:
+    """
+    清理整數值，確保 JSON 序列化安全
+    
+    將 nan, inf 轉換為 0
+    """
+    if value is None:
+        return 0
+    if isinstance(value, float) and (np.isnan(value) or np.isinf(value)):
+        return 0
+    return int(value)
+
+
 @dataclass
 class PerformanceMetrics:
     """績效指標數據類別"""
@@ -106,23 +132,23 @@ class MetricsCalculator:
         var_95, cvar_95 = cls._calculate_var(df['daily_return'].dropna())
         
         return PerformanceMetrics(
-            total_return=total_return,
-            cagr=cagr,
-            annualized_return=cagr,  # 這裡相同
-            volatility=volatility,
-            max_drawdown=max_dd,
-            max_drawdown_duration=max_dd_duration,
-            sharpe_ratio=sharpe,
-            sortino_ratio=sortino,
-            calmar_ratio=calmar,
-            best_year=yearly_stats['best'],
-            worst_year=yearly_stats['worst'],
-            positive_years=yearly_stats['positive'],
-            negative_years=yearly_stats['negative'],
-            avg_up_month=monthly_stats['avg_up'],
-            avg_down_month=monthly_stats['avg_down'],
-            var_95=var_95,
-            cvar_95=cvar_95
+            total_return=sanitize_float(total_return),
+            cagr=sanitize_float(cagr),
+            annualized_return=sanitize_float(cagr),  # 這裡相同
+            volatility=sanitize_float(volatility),
+            max_drawdown=sanitize_float(max_dd),
+            max_drawdown_duration=sanitize_int(max_dd_duration),
+            sharpe_ratio=sanitize_float(sharpe),
+            sortino_ratio=sanitize_float(sortino),
+            calmar_ratio=sanitize_float(calmar),
+            best_year=sanitize_float(yearly_stats['best']),
+            worst_year=sanitize_float(yearly_stats['worst']),
+            positive_years=sanitize_int(yearly_stats['positive']),
+            negative_years=sanitize_int(yearly_stats['negative']),
+            avg_up_month=sanitize_float(monthly_stats['avg_up']),
+            avg_down_month=sanitize_float(monthly_stats['avg_down']),
+            var_95=sanitize_float(var_95),
+            cvar_95=sanitize_float(cvar_95)
         )
     
     @staticmethod
@@ -130,7 +156,10 @@ class MetricsCalculator:
         """計算總報酬率"""
         if len(values) < 2:
             return 0.0
-        return (values.iloc[-1] / values.iloc[0]) - 1
+        initial = values.iloc[0]
+        if initial == 0 or pd.isna(initial):
+            return 0.0
+        return (values.iloc[-1] / initial) - 1
     
     @staticmethod
     def _calculate_cagr(
@@ -150,7 +179,10 @@ class MetricsCalculator:
         if years <= 0:
             return 0.0
         
-        total_return = values.iloc[-1] / values.iloc[0]
+        initial = values.iloc[0]
+        if initial == 0 or pd.isna(initial):
+            return 0.0
+        total_return = values.iloc[-1] / initial
         cagr = (total_return ** (1 / years)) - 1
         return cagr
     
@@ -261,7 +293,7 @@ class MetricsCalculator:
         # 計算下行標準差（只取負報酬）
         downside_returns = daily_returns[daily_returns < 0]
         if len(downside_returns) == 0:
-            return float('inf')  # 無下跌，比率無限大
+            return 0.0  # 無下跌，返回 0（避免 inf 導致 JSON 序列化失敗）
         
         downside_std = downside_returns.std() * np.sqrt(252)
         
@@ -288,13 +320,20 @@ class MetricsCalculator:
     def _calculate_yearly_stats(df: pd.DataFrame) -> dict:
         """計算年度統計"""
         df['year'] = df.index.year
-        yearly_returns = df.groupby('year')['value'].apply(
-            lambda x: (x.iloc[-1] / x.iloc[0]) - 1
-        )
+        
+        def calc_return(x):
+            if len(x) < 2:
+                return 0.0
+            initial = x.iloc[0]
+            if initial == 0 or pd.isna(initial):
+                return 0.0
+            return (x.iloc[-1] / initial) - 1
+        
+        yearly_returns = df.groupby('year')['value'].apply(calc_return)
         
         return {
-            'best': yearly_returns.max(),
-            'worst': yearly_returns.min(),
+            'best': yearly_returns.max() if len(yearly_returns) > 0 else 0.0,
+            'worst': yearly_returns.min() if len(yearly_returns) > 0 else 0.0,
             'positive': (yearly_returns > 0).sum(),
             'negative': (yearly_returns < 0).sum()
         }
@@ -303,16 +342,23 @@ class MetricsCalculator:
     def _calculate_monthly_stats(df: pd.DataFrame) -> dict:
         """計算月份統計"""
         df['year_month'] = df.index.to_period('M')
-        monthly_returns = df.groupby('year_month')['value'].apply(
-            lambda x: (x.iloc[-1] / x.iloc[0]) - 1
-        )
+        
+        def calc_return(x):
+            if len(x) < 2:
+                return 0.0
+            initial = x.iloc[0]
+            if initial == 0 or pd.isna(initial):
+                return 0.0
+            return (x.iloc[-1] / initial) - 1
+        
+        monthly_returns = df.groupby('year_month')['value'].apply(calc_return)
         
         up_months = monthly_returns[monthly_returns > 0]
         down_months = monthly_returns[monthly_returns < 0]
         
         return {
-            'avg_up': up_months.mean() if len(up_months) > 0 else 0,
-            'avg_down': down_months.mean() if len(down_months) > 0 else 0
+            'avg_up': up_months.mean() if len(up_months) > 0 else 0.0,
+            'avg_down': down_months.mean() if len(down_months) > 0 else 0.0
         }
     
     @staticmethod
@@ -337,10 +383,12 @@ class MetricsCalculator:
         # 計算歷史最高價值
         peak = df['value'].expanding().max()
         
-        # 計算回撤百分比
-        drawdown = (df['value'] - peak) / peak
+        # 計算回撤百分比（處理 peak 為 0 的情況）
+        drawdown = pd.Series(0.0, index=df.index)
+        mask = peak > 0
+        drawdown[mask] = (df['value'][mask] - peak[mask]) / peak[mask]
         
-        return [(d, float(dd)) for d, dd in zip(dates, drawdown.values)]
+        return [(d, sanitize_float(dd)) for d, dd in zip(dates, drawdown.values)]
     
     @staticmethod
     def _calculate_var(daily_returns: pd.Series, confidence: float = 0.95) -> Tuple[float, float]:
