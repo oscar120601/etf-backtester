@@ -48,7 +48,7 @@ def import_yahoo_data(symbols: List[str], db: Session) -> dict:
                 if etf.exchange == "LSE":
                     yahoo_symbol = f"{symbol}.L"
                 # 手動對應部分因為階段一資料庫 exchange 為 Null 的英股/國際股 ETF
-                elif symbol in ["VUAA", "CNDX", "EQQQ", "IUMO"]:
+                elif symbol in ["VUAA", "CNDX", "EQQQ", "IUMO", "EIMI", "VDEV"]:
                     yahoo_symbol = f"{symbol}.L"
                 elif symbol == "AVWS":
                     yahoo_symbol = "AVDV" # AVWS is AVDV in yahoo
