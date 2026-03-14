@@ -63,7 +63,7 @@ const Analysis: React.FC = () => {
   const [rollingResult, setRollingResult] = useState<any>(null);
 
   // 相關性矩陣狀態
-  const [corrSymbols, setCorrSymbols] = useState<string[]>([]);
+  const [corrPortfolio, setCorrPortfolio] = useState<{ symbol: string; weight: number }[]>([]);
   const [corrLookback, setCorrLookback] = useState<number>(3);
   const [corrResult, setCorrResult] = useState<any>(null);
 
@@ -122,7 +122,7 @@ const Analysis: React.FC = () => {
 
   // 執行相關性分析
   const handleCorrelation = async () => {
-    if (corrSymbols.length < 2) {
+    if (corrPortfolio.length < 2) {
       setError('請至少選擇 2 檔 ETF');
       return;
     }
@@ -131,8 +131,9 @@ const Analysis: React.FC = () => {
     setError(null);
 
     try {
+      const symbols = corrPortfolio.map(p => p.symbol).join(',');
       const response = await analysisAPI.getCorrelationMatrix({
-        symbols: corrSymbols.join(','),
+        symbols,
         lookback_years: corrLookback,
       });
       setCorrResult(response);
@@ -347,27 +348,14 @@ const Analysis: React.FC = () => {
                 相關性分析設定
               </Typography>
 
-              <FormControl fullWidth sx={{ mb: 3 }}>
-                <InputLabel>選擇 ETF</InputLabel>
-                <Select
-                  multiple
-                  value={corrSymbols}
-                  onChange={(e) => setCorrSymbols(e.target.value as string[])}
-                  renderValue={(selected) => (
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                      {selected.map((value) => (
-                        <Chip key={value} label={value} size="small" />
-                      ))}
-                    </Box>
-                  )}
-                >
-                  {etfs.map((etf) => (
-                    <MenuItem key={etf.symbol} value={etf.symbol}>
-                      {etf.symbol} - {etf.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              {/* 投資組合選擇器 */}
+              <PortfolioSelector
+                portfolio={corrPortfolio}
+                onPortfolioChange={setCorrPortfolio}
+                minEtfs={2}
+                maxEtfs={10}
+                showSaveLoad={true}
+              />
 
               <Box sx={{ mb: 3 }}>
                 <Typography gutterBottom>
@@ -389,7 +377,8 @@ const Analysis: React.FC = () => {
                 variant="contained"
                 fullWidth
                 onClick={handleCorrelation}
-                disabled={loading || corrSymbols.length < 2}
+                disabled={loading || corrPortfolio.length < 2}
+                sx={{ mt: 3 }}
               >
                 {loading ? '計算中...' : '計算相關性'}
               </Button>
