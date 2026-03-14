@@ -65,7 +65,7 @@ class RollingReturnsCalculator:
         start_date: Optional[date] = None,
         end_date: Optional[date] = None,
         window_years: List[int] = None
-    ) -> Dict[int, RollingReturnsResult]:
+    ) -> Tuple[Dict[int, RollingReturnsResult], List[Dict]]:
         """
         計算滾動報酬
         
@@ -76,7 +76,9 @@ class RollingReturnsCalculator:
             window_years: 滾動期間列表（年），預設 [1, 3, 5, 10]
             
         Returns:
-            Dict[int, RollingReturnsResult]: 各期間的滾動報酬結果
+            Tuple[Dict[int, RollingReturnsResult], List[Dict]]: 
+                - 各期間的滾動報酬結果
+                - 被跳過的期間及原因
         """
         if window_years is None:
             window_years = self.DEFAULT_WINDOWS
@@ -87,15 +89,34 @@ class RollingReturnsCalculator:
         if prices_df.empty:
             raise ValueError("無法獲取價格資料")
         
+        # 檢查個別 ETF 的資料長度，以便告知用戶是哪檔 ETF 導致數據不足
+        etf_durations = {}
+        for symbol in portfolio.keys():
+            if symbol in prices_df.columns:
+                valid_prices = prices_df[symbol].dropna()
+                if not valid_prices.empty:
+                    days = len(valid_prices)
+                    years = days / 252
+                    etf_durations[symbol] = years
+        
         # 計算組合日報酬率
         portfolio_returns = self._calculate_portfolio_returns(prices_df, portfolio)
         
         results = {}
+        skipped_windows = []
         
         for window in window_years:
             # 檢查資料是否足夠
             min_days = window * 252  # 約略交易日數
             if len(portfolio_returns) < min_days:
+                # 找出哪些 ETF 限制了這個 window
+                limiting_etfs = [s for s, y in etf_durations.items() if y < window]
+                skipped_windows.append({
+                    "window": window,
+                    "reason": "insufficient_data",
+                    "limiting_etfs": limiting_etfs,
+                    "available_years": round(len(portfolio_returns) / 252, 1)
+                })
                 continue
             
             # 計算滾動報酬
@@ -104,7 +125,7 @@ class RollingReturnsCalculator:
             )
             results[window] = rolling_result
         
-        return results
+        return results, skipped_windows
     
     def _fetch_portfolio_prices(
         self,

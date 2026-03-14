@@ -58,7 +58,7 @@ async def calculate_rolling_returns(
         
         # 計算滾動報酬
         calculator = RollingReturnsCalculator(db)
-        results = calculator.calculate(
+        results, skipped_windows = calculator.calculate(
             portfolio=portfolio,
             start_date=start_date,
             end_date=end_date,
@@ -95,6 +95,7 @@ async def calculate_rolling_returns(
             "analysis_id": str(uuid.uuid4()),
             "portfolio": portfolio,
             "periods": periods_data,
+            "skipped_windows": skipped_windows,
             "summary": summary,
             "generated_at": datetime.utcnow().isoformat(),
             "execution_time_ms": execution_time

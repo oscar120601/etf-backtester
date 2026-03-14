@@ -258,6 +258,24 @@ const Analysis: React.FC = () => {
                   <Typography variant="h6" gutterBottom>
                     滾動報酬圖表
                   </Typography>
+                  
+                  {rollingResult.skipped_windows && rollingResult.skipped_windows.length > 0 && (
+                    <Alert severity="info" sx={{ mb: 2 }}>
+                      以下期間因投資組合中部分 ETF 歷史數據不足而跳過：
+                      <Box component="ul" sx={{ m: 0, pl: 2, mt: 1 }}>
+                        {rollingResult.skipped_windows.map((sw: any, idx: number) => (
+                          <li key={idx}>
+                            <strong>{sw.window}年</strong>：
+                            {sw.limiting_etfs?.length > 0 
+                              ? `受限於 ${sw.limiting_etfs.join(', ')}（目前僅有約 ${sw.available_years} 年數據）`
+                              : `目前僅有約 ${sw.available_years} 年數據`
+                            }
+                          </li>
+                        ))}
+                      </Box>
+                    </Alert>
+                  )}
+
                   <RollingReturnsChart periods={rollingResult.periods} />
                 </Paper>
 
