@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Button,
@@ -105,21 +105,31 @@ export default function PortfolioSelector({
     }
   };
 
+  // 使用 ref 来确保能获取到最新的 ETF 选择
+  const newEtfSymbolRef = React.useRef(newEtfSymbol);
+  React.useEffect(() => {
+    newEtfSymbolRef.current = newEtfSymbol;
+  }, [newEtfSymbol]);
+
   // 新增 ETF 到手動組合
   const handleAddEtf = () => {
-    if (!newEtfSymbol) return;
-    if (portfolio.some(p => p.symbol === newEtfSymbol)) {
+    const symbolToAdd = newEtfSymbolRef.current;
+    
+    if (!symbolToAdd) {
+      console.log('No ETF selected');
+      return;
+    }
+    if (portfolio.some(p => p.symbol === symbolToAdd)) {
       setNewEtfSymbol('');
       return;
     }
 
-    const etf = etfs.find(e => e.symbol === newEtfSymbol);
+    const etf = etfs.find(e => e.symbol === symbolToAdd);
     if (!etf) return;
 
     // 計算平均分配權重
     const newCount = portfolio.length + 1;
     const newWeight = 1 / newCount;
-
 
     // 重新分配所有權重
     const newPortfolio = portfolio.map(p => ({
@@ -128,7 +138,7 @@ export default function PortfolioSelector({
     }));
 
     newPortfolio.push({
-      symbol: newEtfSymbol,
+      symbol: symbolToAdd,
       weight: newWeight,
     });
 
@@ -139,7 +149,7 @@ export default function PortfolioSelector({
     });
     setWeightInput(newWeightInput);
 
-    onPortfolioChange(newPortfolio);
+    onPortfolioChange([...newPortfolio]); // 使用展開運算符創建新引用
     setNewEtfSymbol('');
   };
 
@@ -256,7 +266,10 @@ export default function PortfolioSelector({
                   <InputLabel>選擇 ETF</InputLabel>
                   <Select
                     value={newEtfSymbol}
-                    onChange={(e) => setNewEtfSymbol(e.target.value)}
+                    onChange={(e) => {
+                      console.log('ETF selected:', e.target.value);
+                      setNewEtfSymbol(e.target.value);
+                    }}
                     label="選擇 ETF"
                     disabled={disabled || portfolio.length >= maxEtfs}
                   >
@@ -280,11 +293,14 @@ export default function PortfolioSelector({
                 <Button
                   variant="outlined"
                   startIcon={<Add />}
-                  onClick={handleAddEtf}
+                  onClick={() => {
+                    console.log('Button clicked! newEtfSymbol:', newEtfSymbol);
+                    handleAddEtf();
+                  }}
                   disabled={!newEtfSymbol || disabled || portfolio.length >= maxEtfs}
                   size="small"
                 >
-                  新增
+                  新增 {newEtfSymbol ? `(已選: ${newEtfSymbol})` : '(未選)'}
                 </Button>
               </Grid>
             </Grid>
