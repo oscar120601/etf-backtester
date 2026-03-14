@@ -9,6 +9,7 @@ alembic==1.13.1
 # Data Processing
 pandas==2.1.4
 numpy==1.26.3
+scipy==1.11.4
 
 # Data Sync (Yahoo Finance)
 yfinance==0.2.36

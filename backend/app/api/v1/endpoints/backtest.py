@@ -361,10 +361,18 @@ async def compare_portfolios(
             # 執行回測
             engine = BacktestEngine(db)
             
+            from datetime import date
+            
+            start_date_val = parameters.get("start_date", "2020-01-01")
+            end_date_val = parameters.get("end_date", "2025-01-01")
+            
+            start_date_obj = date.fromisoformat(start_date_val) if isinstance(start_date_val, str) else start_date_val
+            end_date_obj = date.fromisoformat(end_date_val) if isinstance(end_date_val, str) else end_date_val
+            
             backtest_results = engine.run_backtest(
                 holdings_config=portfolio_config["holdings"],
-                start_date=parameters.get("start_date", "2020-01-01"),
-                end_date=parameters.get("end_date", "2025-01-01"),
+                start_date=start_date_obj,
+                end_date=end_date_obj,
                 initial_amount=Decimal(str(parameters.get("initial_amount", 10000))),
                 rebalance_frequency=parameters.get("rebalance_frequency", "yearly"),
                 monthly_contribution=Decimal(str(parameters.get("monthly_contribution", 0))) if parameters.get("monthly_contribution") else None,

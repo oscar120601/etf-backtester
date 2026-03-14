@@ -171,54 +171,54 @@ class BacktestEngine:
             
             daily_prices = prices_df.loc[current_date]
             
-            # 計算當日組合價值
-            portfolio_value = Decimal("0")
-            total_dividend = Decimal("0")
-            newly_active = []  # 今天新開始交易的 ETF
+            # 先計算已活躍 ETF 的總價值（用於後續新 ETF 初始化）
+            active_portfolio_value = Decimal("0")
+            for symbol in active_symbols:
+                if symbol in daily_prices and pd.notna(daily_prices[symbol]):
+                    price = Decimal(str(daily_prices[symbol]))
+                    holdings[symbol].value = holdings[symbol].shares * price
+                    active_portfolio_value += holdings[symbol].value
             
+            # 處理新開始交易的 ETF
+            newly_active = []
             for symbol, holding in holdings.items():
-                # 檢查該 ETF 是否今天開始交易
                 if symbol not in active_symbols:
                     if symbol in symbol_start_dates and current_date >= symbol_start_dates[symbol]:
                         if symbol in daily_prices and pd.notna(daily_prices[symbol]):
                             newly_active.append(symbol)
                             active_symbols.add(symbol)
-                            # 初始化該 ETF 的持倉
-                            target_value = portfolio_value * holding.weight
+                            # 初始化該 ETF 的持倉（使用當前組合價值）
+                            target_value = active_portfolio_value * holding.weight
                             price = Decimal(str(daily_prices[symbol]))
-                            holding.shares = target_value / price
-                            holding.value = target_value
-                    continue
-                
-                # 已活躍的 ETF，正常計算價值
+                            if price > 0:
+                                holding.shares = target_value / price
+                                holding.value = target_value
+                            else:
+                                holding.shares = Decimal("0")
+                                holding.value = Decimal("0")
+            
+            # 重新計算包含新 ETF 的組合總價值，並處理配息
+            portfolio_value = Decimal("0")
+            total_dividend = Decimal("0")
+            for symbol in active_symbols:
                 if symbol in daily_prices and pd.notna(daily_prices[symbol]):
+                    portfolio_value += holdings[symbol].value
                     price = Decimal(str(daily_prices[symbol]))
-                    holding.value = holding.shares * price
-                    portfolio_value += holding.value
                     
                     # 檢查是否有配息
                     dividend = self._get_dividend(symbol, current_date)
                     if dividend > 0:
-                        dividend_amount = holding.shares * dividend
+                        dividend_amount = holdings[symbol].shares * dividend
                         total_dividend += dividend_amount
                         
                         if reinvest_dividends:
                             # 配息再投資
                             new_shares = dividend_amount / price
-                            holding.shares += new_shares
+                            holdings[symbol].shares += new_shares
+                            holdings[symbol].value = holdings[symbol].shares * price
                         else:
                             # 配息入現金
                             cash += dividend_amount
-            
-            # 處理新開始交易的 ETF（從現金或其他持倉重新分配）
-            if newly_active and portfolio_value > 0:
-                # 簡化處理：從現金中分配
-                for symbol in newly_active:
-                    target_value = portfolio_value * holdings[symbol].weight
-                    price = Decimal(str(daily_prices[symbol]))
-                    shares = target_value / price
-                    holdings[symbol].shares = shares
-                    holdings[symbol].value = target_value
             
             portfolio_value += cash
             
@@ -287,6 +287,13 @@ class BacktestEngine:
         symbol_start_dates = {}
         
         for symbol in symbols:
+            # 獲取該 ETF 的實際歷史最早開始日期
+            earliest = self.db.query(ETFPrice.date).filter(
+                ETFPrice.symbol == symbol
+            ).order_by(ETFPrice.date.asc()).first()
+            if earliest:
+                symbol_start_dates[symbol] = earliest.date
+                
             prices = self.db.query(ETFPrice).filter(
                 ETFPrice.symbol == symbol,
                 ETFPrice.date >= start_date,
@@ -297,8 +304,6 @@ class BacktestEngine:
                 # 創建該 ETF 的價格序列
                 symbol_data = {p.date: float(p.adjusted_close) for p in prices}
                 all_data[symbol] = symbol_data
-                # 記錄該 ETF 的實際開始日期
-                symbol_start_dates[symbol] = min(symbol_data.keys())
         
         if not all_data:
             return pd.DataFrame(), {}
@@ -451,7 +456,7 @@ class BacktestEngine:
         # 獲取歷史價格（使用過去5年）
         end_date = date.today()
         start_date = end_date - timedelta(days=365 * 5)
-        prices_df = self._fetch_historical_prices(symbols, start_date, end_date)
+        prices_df, _ = self._fetch_historical_prices(symbols, start_date, end_date)
         
         if prices_df.empty:
             raise ValueError("無法獲取歷史價格資料")

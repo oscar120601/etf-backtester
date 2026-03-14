@@ -32,6 +32,7 @@ export default function TemplateSelector({ onSelect, disabled }: TemplateSelecto
   const handleClose = () => setOpen(false);
 
   const handleSelect = (template: PortfolioTemplate) => {
+    console.log('Template selected:', template);
     onSelect(template);
     handleClose();
   };

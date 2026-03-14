@@ -26,15 +26,15 @@ def upgrade() -> None:
         sa.Column('symbol', sa.String(length=20), nullable=False),
         sa.Column('name', sa.String(length=200), nullable=False),
         sa.Column('name_zh', sa.String(length=200), nullable=True),
-        sa.Column('issuer', sa.String(length=100), nullable=False),
+        sa.Column('issuer', sa.String(length=100), nullable=True),
         sa.Column('asset_class', sa.String(length=50), nullable=False),
         sa.Column('asset_subclass', sa.String(length=50), nullable=True),
         sa.Column('factor_type', sa.String(length=50), nullable=True),
         sa.Column('region', sa.String(length=50), nullable=True),
         sa.Column('sector', sa.String(length=100), nullable=True),
         sa.Column('expense_ratio', sa.Numeric(precision=6, scale=5), nullable=False),
-        sa.Column('inception_date', sa.Date(), nullable=False),
-        sa.Column('exchange', sa.String(length=20), nullable=False),
+        sa.Column('inception_date', sa.Date(), nullable=True),
+        sa.Column('exchange', sa.String(length=20), nullable=True),
         sa.Column('currency', sa.String(length=3), nullable=True),
         sa.Column('is_active', sa.Boolean(), nullable=True),
         sa.Column('is_recommended', sa.Boolean(), nullable=True),
@@ -42,7 +42,7 @@ def upgrade() -> None:
         sa.Column('min_data_year', sa.Integer(), nullable=True),
         sa.Column('liquidity_score', sa.Integer(), nullable=True),
         sa.Column('risk_level', sa.Integer(), nullable=True),
-        sa.Column('tags', postgresql.ARRAY(sa.String()), nullable=True),
+        sa.Column('tags', sa.String(length=500), nullable=True),
         sa.Column('description', sa.Text(), nullable=True),
         sa.Column('tracking_index_name', sa.String(length=200), nullable=True),
         sa.Column('tracking_index_symbol', sa.String(length=50), nullable=True),
@@ -57,7 +57,13 @@ def upgrade() -> None:
     op.create_index(op.f('ix_etf_master_is_active'), 'etf_master', ['is_active'], unique=False)
     op.create_index(op.f('ix_etf_master_region'), 'etf_master', ['region'], unique=False)
     op.create_index(op.f('ix_etf_master_symbol'), 'etf_master', ['symbol'], unique=False)
-    op.create_index('ix_etf_master_tags', 'etf_master', ['tags'], unique=False, postgresql_using='gin')
+    
+    # Only create GIN index for PostgreSQL
+    bind = op.get_bind()
+    if bind.dialect.name == 'postgresql':
+        op.create_index('ix_etf_master_tags', 'etf_master', ['tags'], unique=False, postgresql_using='gin')
+    else:
+        op.create_index('ix_etf_master_tags', 'etf_master', ['tags'], unique=False)
     
     # 建立 etf_prices 表
     op.create_table(

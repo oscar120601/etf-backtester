@@ -56,11 +56,10 @@ class StressTestEngine:
         CrisisScenario(
             id="2008_financial_crisis",
             name="2008 金融危機",
-            description="次貸危機、雷曼兄弟倒閉，全球金融市場崩盤（需要歷史數據）",
+            description="次貸危機、雷曼兄弟倒閉，全球金融市場崩盤",
             start_date=date(2007, 10, 1),
             end_date=date(2009, 3, 31),
-            benchmark_symbol="SPY",
-            available=False
+            benchmark_symbol="SPY"
         ),
         # 可用情境（數據庫中 2020-2024）
         CrisisScenario(
