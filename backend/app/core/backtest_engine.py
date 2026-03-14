@@ -269,8 +269,8 @@ class BacktestEngine:
         """
         從資料庫獲取歷史價格資料
         
-        處理不同 ETF 起始日期不同的情況。對於某 ETF 尚未開始交易的日期，
-        會使用 NaN 標記，讓回測引擎決定如何處理。
+        處理不同 ETF 起始日期不同的情況，並對缺失值進行前向填充。
+        對於假日或部分 ETF 無數據的日期，使用前向填充確保每個交易日都有價格。
         
         Args:
             symbols: ETF 代碼列表
@@ -279,7 +279,7 @@ class BacktestEngine:
         
         Returns:
             Tuple[pd.DataFrame, Dict[str, date]]: 
-                - 價格資料 DataFrame（包含 NaN）
+                - 價格資料 DataFrame（已前向填充）
                 - 各 ETF 實際開始交易日期
         """
         # 為每個 ETF 單獨獲取數據
@@ -309,16 +309,30 @@ class BacktestEngine:
             all_dates.update(symbol_data.keys())
         all_dates = sorted(all_dates)
         
-        # 創建 DataFrame，缺失值保持為 NaN
+        # 創建 DataFrame，對缺失值進行前向填充
         df_data = {}
         for symbol in symbols:
             if symbol in all_data:
-                # 只使用實際有數據的日期
-                symbol_series = [all_data[symbol].get(d, float('nan')) for d in all_dates]
+                # 建立完整的日期序列，對缺失值進行前向填充
+                symbol_series = []
+                last_price = None
+                for d in all_dates:
+                    if d in all_data[symbol]:
+                        price = all_data[symbol][d]
+                        last_price = price
+                        symbol_series.append(price)
+                    elif last_price is not None:
+                        # 使用前向填充（假日或缺失日期使用上一個有效價格）
+                        symbol_series.append(last_price)
+                    else:
+                        # 尚未開始交易，使用第一個有效價格
+                        first_price = list(all_data[symbol].values())[0]
+                        symbol_series.append(first_price)
+                
                 df_data[symbol] = symbol_series
             else:
-                # 該 ETF 完全沒有數據，填充 NaN
-                df_data[symbol] = [float('nan')] * len(all_dates)
+                # 該 ETF 完全沒有數據，填充 0
+                df_data[symbol] = [0.0] * len(all_dates)
         
         df = pd.DataFrame(df_data, index=all_dates)
         df = df.sort_index()
